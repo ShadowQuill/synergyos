@@ -1,0 +1,26 @@
+# 字节码 / 缓存
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# 运行产物
+reports/
+reports_*/
+out_*/
+
+# 测试缓存
+.pytest_cache/
+
+# 工具工作记忆（内部笔记，非项目交付物）
+.workbuddy/
+
+# 用户画像（持久化，含个人偏好，勿入库）
+.synergyos/
+*.synergyos.json
+
+# 虚拟环境
+.venv/
+venv/
+.env

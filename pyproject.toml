@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synergyos"
+version = "0.1.0"
+description = "灵犀 · 自进化协作智能体 SynergyOS：以用户为中心的多角色 AI 智能体网络"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "SynergyOS" }]
+keywords = ["ai", "multi-agent", "llm", "orchestration", "reflexion"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# 纯标准库实现，运行时零第三方依赖；接入真实大模型时再 pip install openai
+dependencies = []
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+
+[project.scripts]
+synergyos = "synergyos.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["synergyos*"]

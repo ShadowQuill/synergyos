@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="灵犀 SynergyOS Logo">
+  <!-- 灵犀 SynergyOS：莫比乌斯环（自我迭代）+ 声波波纹（懂你对话） -->
+  <defs>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="55%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#1E293B" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="240" height="240" fill="url(#glow)"/>
+
+  <!-- 声波波纹（对话 / 懂你） -->
+  <g fill="none" stroke="url(#wave)" stroke-linecap="round">
+    <path d="M150 96 q14 24 0 48" stroke-width="4"/>
+    <path d="M164 84 q22 36 0 72" stroke-width="4" opacity="0.7"/>
+    <path d="M178 72 q30 48 0 96" stroke-width="4" opacity="0.45"/>
+  </g>
+
+  <!-- 莫比乌斯环（自我迭代 / 无限进化），以 ∞ 形变体呈现单面连续带 -->
+  <g fill="none" stroke="url(#ring)" stroke-linecap="round">
+    <path d="M120 120
+             C 92 88, 52 88, 52 120
+             C 52 152, 92 152, 120 120
+             C 148 88, 188 88, 188 120
+             C 188 152, 148 152, 120 120 Z"
+          stroke-width="9"/>
+    <!-- 内圈细带，强化“带子”而非普通圆环的观感 -->
+    <path d="M120 120
+             C 96 96, 64 96, 64 120
+             C 64 144, 96 144, 120 120
+             C 144 96, 176 96, 176 120
+             C 176 144, 144 144, 120 120 Z"
+          stroke-width="3" opacity="0.55"/>
+    <!-- 半扭转高光，提示莫比乌斯单面连续 -->
+    <path d="M120 120 L 92 100" stroke-width="3" opacity="0.85"/>
+  </g>
+
+  <!-- 中心脉冲点（智能体协作的“心有灵犀”节点） -->
+  <circle cx="120" cy="120" r="6" fill="#22D3EE"/>
+  <circle cx="120" cy="120" r="11" fill="none" stroke="#22D3EE" stroke-width="1.5" opacity="0.5"/>
+</svg>
+<!--
+配色规范（科技蓝数据风）：
+  主色  #3B82F6 (蓝)   #6366F1 (靛)
+  点缀  #22D3EE (青)   辉光 #0F172A (深夜底)
+  语义：蓝/靛=理性执行(左脑)，青=对话与共情(右脑)，中心脉冲=双脑共鸣节点
+-->

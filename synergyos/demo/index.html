@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>灵犀 · 自进化协作智能体 SynergyOS</title>
+<style>
+  :root{
+    --blue:#3B82F6; --indigo:#6366F1; --cyan:#22D3EE;
+    --bg:#0B1120; --panel:#111A2E; --panel2:#16213A;
+    --text:#E5EDFF; --muted:#8AA0C8; --line:#22304F;
+    --ok:#34D399; --warn:#FBBF24; --bad:#F87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#15243f 0%,var(--bg) 55%);
+    color:var(--text);line-height:1.6}
+  a{color:var(--cyan)}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  /* hero */
+  .hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:24px 0 8px}
+  .hero svg{width:120px;height:120px;flex:none;
+    filter:drop-shadow(0 0 18px rgba(34,211,238,.35))}
+  .hero h1{font-size:34px;margin:0;letter-spacing:1px}
+  .hero .sub{color:var(--muted);font-size:15px;margin-top:4px}
+  .tag{display:inline-block;margin-top:10px;padding:4px 12px;border:1px solid var(--line);
+    border-radius:999px;color:var(--cyan);font-size:13px}
+  .lead{color:var(--muted);max-width:760px;margin:18px 0 6px}
+  /* sections */
+  h2{font-size:22px;margin:46px 0 14px;padding-left:12px;border-left:3px solid var(--cyan)}
+  h3{font-size:16px;color:#cfe0ff;margin:0 0 8px}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:16px;padding:18px;position:relative;overflow:hidden}
+  .card .badge{font-size:12px;color:var(--cyan);letter-spacing:1px}
+  .card p{color:var(--muted);font-size:14px;margin:6px 0 0}
+  /* dual brain */
+  .brain{display:flex;gap:14px;align-items:stretch;margin-top:10px}
+  .hemi{flex:1;border-radius:12px;padding:12px;border:1px solid var(--line);min-height:120px}
+  .left{background:linear-gradient(160deg,rgba(59,130,246,.18),rgba(99,102,241,.06))}
+  .right{background:linear-gradient(160deg,rgba(34,211,238,.16),rgba(99,102,241,.05))}
+  .hemi .title{font-weight:700;font-size:14px}
+  .hemi .desc{font-size:12px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+  .pulse .dot{background:var(--cyan);animation:blink 1.2s infinite}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  .bus{margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+    color:var(--muted);height:54px;overflow:hidden;border-top:1px dashed var(--line);padding-top:6px}
+  .bus div{opacity:0;animation:slide .5s forwards}
+  @keyframes slide{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  /* quiz */
+  .q{margin:10px 0}
+  .q .qt{font-size:14px;margin-bottom:6px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opts button{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    padding:6px 12px;border-radius:999px;cursor:pointer;font-size:13px}
+  .opts button.sel{border-color:var(--cyan);background:rgba(34,211,238,.15);color:var(--cyan)}
+  .profile-out{margin-top:12px;font-size:13px;color:var(--muted)}
+  .profile-out b{color:var(--cyan)}
+  .btn{background:linear-gradient(90deg,var(--blue),var(--indigo));border:0;color:#fff;
+    padding:9px 18px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  /* reflexion */
+  .loop{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:13px;color:var(--muted)}
+  .node{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel2)}
+  .arrow{color:var(--cyan)}
+  .weights{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .w{flex:1;min-width:90px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+  .w .v{font-size:18px;color:var(--cyan);font-weight:700}
+  .w .l{font-size:11px;color:var(--muted)}
+  /* pause */
+  .bar{height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:12px 0}
+  .bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));transition:width .25s}
+  .ph{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);position:relative}
+  .ph span{position:relative}
+  .ph span::before{content:"";position:absolute;top:-14px;left:50%;width:2px;height:8px;background:var(--line)}
+  /* timeline */
+  .timeline{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px;height:300px;overflow:auto;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  .ev{padding:3px 0;border-bottom:1px dashed #1c2840;opacity:0;transform:translateY(6px);animation:evin .4s forwards}
+  @keyframes evin{to{opacity:1;transform:none}}
+  .t-cold{color:#7dd3fc}.t-left{color:#93c5fd}.t-right{color:#6ee7b7}
+  .t-reflex{color:#c4b5fd}.t-pause{color:#fca5a5}.t-deliver{color:#34d399}.t-info{color:#94a3b8}
+  .controls{display:flex;gap:10px;margin:12px 0}
+  /* scenarios */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+  .tab{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+    padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px}
+  .tab.sel{border-color:var(--cyan);background:rgba(34,211,238,.15);color:var(--cyan)}
+  .sc-output{font-size:13px;color:var(--text)}
+  .sc-output pre{background:#0c1226;border:1px solid var(--line);border-radius:10px;
+    padding:12px;overflow:auto;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;color:#cdd8ff;white-space:pre-wrap;margin:0}
+  .taskin{width:100%;margin:10px 0;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;color:var(--text);padding:9px 12px;font-size:13px;font-family:inherit}
+  .taskin:focus{outline:none;border-color:var(--cyan)}
+  .sc-output .rep-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+  .sc-output .rep-card b{color:var(--cyan)}
+  .chart{margin:6px 0}
+  .chart .bar{fill:url(#scGrad)}
+  code{background:var(--panel2);padding:2px 6px;border-radius:6px;color:var(--cyan);font-size:12.5px}
+  .ok{color:var(--ok);font-weight:600}.warn{color:var(--warn);font-weight:600}.bad{color:var(--bad);font-weight:600}
+  .struct{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;white-space:pre;overflow:auto}
+  footer{margin-top:50px;color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--line);padding-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <svg viewBox="0 0 240 240" aria-label="灵犀 Logo">
+      <defs>
+        <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#3B82F6"/><stop offset="55%" stop-color="#6366F1"/>
+          <stop offset="100%" stop-color="#22D3EE"/></linearGradient>
+        <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#22D3EE" stop-opacity=".9"/>
+          <stop offset="100%" stop-color="#6366F1" stop-opacity=".2"/></linearGradient>
+      </defs>
+      <g fill="none" stroke="url(#wave)" stroke-linecap="round">
+        <path d="M150 96 q14 24 0 48" stroke-width="4"/>
+        <path d="M164 84 q22 36 0 72" stroke-width="4" opacity=".7"/>
+        <path d="M178 72 q30 48 0 96" stroke-width="4" opacity=".45"/></g>
+      <g fill="none" stroke="url(#ring)" stroke-linecap="round">
+        <path d="M120 120 C 92 88,52 88,52 120 C 52 152,92 152,120 120 C 148 88,188 88,188 120 C 188 152,148 152,120 120 Z" stroke-width="9"/>
+        <path d="M120 120 C 96 96,64 96,64 120 C 64 144,96 144,120 120 C 144 96,176 96,176 120 C 176 144,144 144,120 120 Z" stroke-width="3" opacity=".55"/>
+        <path d="M120 120 L 92 100" stroke-width="3" opacity=".85"/></g>
+      <circle cx="120" cy="120" r="6" fill="#22D3EE"/>
+      <circle cx="120" cy="120" r="11" fill="none" stroke="#22D3EE" stroke-width="1.5" opacity=".5"/>
+    </svg>
+    <div>
+      <h1>灵犀 · SynergyOS</h1>
+      <div class="sub">自进化协作智能体 — 以用户为中心的 Multi-Agent 网络</div>
+      <span class="tag">双脑协作 · 冷启动锚定 · 自适应修复 · 智能节律控制</span>
+    </div>
+  </div>
+  <p class="lead">灵犀不只是一个模型，而是一个多角色 AI 智能体网络。它用「分工-协作-反思」模拟人类顶级团队：
+    <b style="color:#93c5fd">左脑</b>负责把事做对，<b style="color:#6ee7b7">右脑</b>负责让你满意；在动态协作中交付复杂目标，并在适当的时候保持沉默。</p>
+
+  <!-- 双脑协作 -->
+  <h2>① 双脑协作 Dual-Brain Collaboration</h2>
+  <div class="card">
+    <span class="badge">ARCHITECT → PROGRAMMER → TESTER ｜ OBSERVER</span>
+    <div class="brain">
+      <div class="hemi left">
+        <div class="title">🧠 左脑 · 执行者</div>
+        <div class="desc">逻辑推理 / 代码生成 / 数据分析<br>专注「如何把事做对」</div>
+        <div class="bus" id="leftBus"></div>
+      </div>
+      <div class="hemi right pulse">
+        <div class="title"><span class="dot"></span>右脑 · 观察者</div>
+        <div class="desc">偏好画像 / 满意度评分 / 误判检测<br>专注「如何让用户满意」</div>
+        <div class="bus" id="rightBus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 冷启动 -->
+  <h2>② 冷启动偏好锚定 Cold-start Profiling</h2>
+  <div class="card">
+    <span class="badge">3-5 题最小探测 · 后台静默学习</span>
+    <div id="quiz"></div>
+    <div style="margin-top:12px"><button class="btn" id="anchorBtn" disabled>锚定画像</button></div>
+    <div class="profile-out" id="profileOut">完成上方选择题后，这里生成你的初始画像。</div>
+  </div>
+
+  <!-- 修复 -->
+  <h2>③ 自适应生长与修复 Adaptive Growth & Healing</h2>
+  <div class="card">
+    <span class="badge">REFLEXION · 无人工干预软修复</span>
+    <p>当交付偏离预期，系统回溯协作链：区分 <b style="color:var(--bad)">逻辑错误</b> 与 <b style="color:var(--warn)">偏好误判</b>，动态调权。</p>
+    <div class="loop">
+      <div class="node">交付物</div><span class="arrow">→</span>
+      <div class="node">右脑观察</div><span class="arrow">→</span>
+      <div class="node">反思器归类</div><span class="arrow">→</span>
+      <div class="node">软修复调权</div><span class="arrow">→</span>
+      <div class="node">下一轮</div>
+    </div>
+    <div class="weights" id="weights">
+      <div class="w"><div class="v" data-w="architect">1.0</div><div class="l">架构师</div></div>
+      <div class="w"><div class="v" data-w="programmer">1.0</div><div class="l">程序员</div></div>
+      <div class="w"><div class="v" data-w="tester">1.0</div><div class="l">测试员</div></div>
+      <div class="w"><div class="v" data-w="observer">1.0</div><div class="l">观察者</div></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" id="healBtn">模拟一次「偏好误判」并软修复</button></div>
+  </div>
+
+  <!-- 节律控制 -->
+  <h2>④ 智能节律控制 Smart Pause Control</h2>
+  <div class="card">
+    <span class="badge">PAUSE HORIZON · 认知停时</span>
+    <p>系统预估最佳暂停节点；你也可随时暂停，它将优雅保存状态并生成阶段性简报。</p>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="ph"><span>锚定</span><span>左脑</span><span>右脑</span><span>仲裁</span><span>反思</span><span>交付</span></div>
+    <div class="controls">
+      <button class="btn" id="runPause">运行长任务</button>
+      <button class="btn" id="pauseBtn">⏸ 用户暂停</button>
+      <button class="btn" id="resumeBtn">▶ 恢复</button>
+    </div>
+    <div class="profile-out" id="pauseInfo">点击「运行长任务」开始；进度到预测停时点会提示，也可主动暂停。</div>
+  </div>
+
+  <!-- 应用场景 -->
+  <h2>应用场景 Scenarios</h2>
+  <p class="lead">同一套双脑协作内核，在不同场景里自适应。切换标签查看「分工-协作-反思」如何落地到个人助理、商业分析、软件研发（需求到用例 / 代码评审）与数据分析洞察；每个场景末尾附「④ 真实验证」——dev 走 pytest 实测，其余场景走结构化验收（含用户排除要素优先级）。</p>
+  <div class="tabs" id="scTabs">
+    <button class="tab sel" data-s="paas">个人助理 · 周报</button>
+    <button class="tab" data-s="biz">商业分析 · 可视化</button>
+    <button class="tab" data-s="dev">软件研发 · 需求</button>
+    <button class="tab" data-s="code-review">软件研发 · 代码评审</button>
+    <button class="tab" data-s="data-analysis">商业分析 · 洞察</button>
+  </div>
+  <div class="card">
+    <span class="badge" id="scenarioBadge"></span>
+    <p id="scenarioDesc"></p>
+    <input class="taskin" id="scTask" placeholder="输入任务，或留空用该场景默认任务" />
+    <div class="profile-out" style="font-size:12px">提示：点「⏭ 载入排除要素示例」可一键查看「用户排除要素 → 诚实省略」的验收效果。</div>
+    <div class="grid" style="grid-template-columns:1.25fr 1fr">
+      <div>
+        <h3>协作产出</h3>
+        <div class="sc-output" id="scOutput">点击「运行该场景」查看双脑交付物。</div>
+      </div>
+      <div>
+        <h3>协作时间线</h3>
+        <div class="timeline" id="scTimeline" style="height:248px"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="scRun">▶ 运行该场景</button>
+      <button class="btn" id="scSample" style="background:linear-gradient(90deg,#22d3ee,#6366f1)">⏭ 载入排除要素示例</button>
+    </div>
+  </div>
+
+  <!-- 实时时间线 -->
+  <h2>实时协作时间线（全链路回放）</h2>
+  <div class="controls">
+    <button class="btn" id="playBtn">▶ 播放一次完整协作</button>
+  </div>
+  <div class="timeline" id="tl"></div>
+
+  <!-- 运行报告导出 -->
+  <h2>⑤ 运行报告导出 SynergyOS Report</h2>
+  <div class="card">
+    <span class="badge">与 CLI --report 同构 · 纯前端生成</span>
+    <p>汇总当前演示中的画像、双脑产出、反思调权与节律状态，生成一份可预览 / 可下载的运行报告。</p>
+    <div class="controls">
+      <button class="btn" id="repPreview">生成并预览报告（HTML）</button>
+      <button class="btn" id="repMd">下载报告（Markdown）</button>
+    </div>
+    <div class="profile-out" id="repOut">完成上方选择题、或体验其他区块后，点击按钮即可导出与 CLI 同构的运行报告。</div>
+  </div>
+
+  <!-- 使用 -->
+  <h2>运行方式</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>开箱即跑（Mock 引擎）</h3>
+      <p><code>python3 -m synergyos.cli --auto --task "你的任务"</code><br>无需任何 API Key。</p>
+    </div>
+    <div class="card">
+      <h3>接入真实大模型</h3>
+      <p><code>export OPENAI_API_KEY=sk-...</code><br>引擎自动切换为 OpenAI 兼容接口，代码零改动。</p>
+    </div>
+    <div class="card">
+      <h3>交互式冷启动</h3>
+      <p><code>python3 -m synergyos.cli</code><br>终端会问 5 道选择题建立你的画像。</p>
+    </div>
+  </div>
+
+  <h2>项目结构</h2>
+  <div class="struct">synergyos/
+├── core/
+│   ├── engine.py      # 模型引擎（Mock / OpenAI 自动切换）
+│   ├── bus.py         # 事件总线（协作过程可观测）
+│   ├── profile.py     # 冷启动偏好锚定 + 静默学习
+│   ├── brain.py       # 双脑协作（左脑执行 / 右脑观察 / 仲裁）
+│   ├── reflexion.py   # 自适应生长与修复（Reflexion）
+│   ├── pause.py       # 智能节律控制（Pause Horizon）
+│   └── orchestrator.py# 分工-协作-反思 顶层编排
+├── cli.py             # 终端演示入口
+└── demo/
+    ├── index.html     # 本可视化演示页
+    └── logo.svg       # 莫比乌斯环 + 声波波纹</div>
+
+  <footer>灵犀 SynergyOS · 心有灵犀一点通 — 懂得在正确的时间做正确的事，在适当的时候保持沉默。</footer>
+</div>
+
+<script>
+/* ---------- 双脑动画 ---------- */
+const leftMsgs=["architect: 拆解需求 → 实施方案","programmer: 编写实现代码","tester: 生成测试用例"];
+const rightMsgs=["观察者: 构建偏好信号…","观察者: 满意度评分 0.86","观察者: 偏好命中 ✓"];
+function flowBus(el,msgs){let i=0;el.innerHTML="";setInterval(()=>{if(i>=msgs.length)i=0;const d=document.createElement('div');d.textContent='› '+msgs[i++];el.prepend(d);if(el.children.length>3)el.lastChild.remove();},1100);}
+flowBus(document.getElementById('leftBus'),leftMsgs);
+flowBus(document.getElementById('rightBus'),rightMsgs);
+
+/* ---------- 冷启动问答 ---------- */
+const QS=[
+ {q:"你更希望我以什么方式沟通？",o:["简洁直接","有结构分点","细致带背景","轻松随意"]},
+ {q:"产出内容通常要多详细？",o:["只要结论","结论+步骤","完整可复现","含取舍讨论"]},
+ {q:"图表/界面审美偏好？",o:["极简冷淡","科技蓝数据","温暖柔和","高对比"]},
+ {q:"面对不确定的取值？",o:["稳健保守","平衡","激进尝试"]},
+ {q:"希望我多主动吗？",o:["只执行","关键节点建议","全程主动共生"]},
+];
+const sel={};const quiz=document.getElementById('quiz');
+QS.forEach((it,idx)=>{const box=document.createElement('div');box.className='q';
+ box.innerHTML=`<div class="qt">${idx+1}. ${it.q}</div>`;const opts=document.createElement('div');opts.className='opts';
+ it.o.forEach((op,oi)=>{const b=document.createElement('button');b.textContent=op;
+   b.onclick=()=>{opts.querySelectorAll('button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');sel[idx]=op;
+     document.getElementById('anchorBtn').disabled=Object.keys(sel).length<QS.length;};
+   opts.appendChild(b);});box.appendChild(opts);quiz.appendChild(box);});
+document.getElementById('anchorBtn').onclick=()=>{
+ const keys=["communication_style","detail_level","aesthetic","risk_tolerance","collaboration"];
+ let html="<b>已锚定初始画像：</b><br>";
+ QS.forEach((it,i)=>{html+=`· ${it.q} → <b>${sel[i]}</b><br>`;});
+ html+="<br><i>此后系统将在后台静默学习，完善偏好（一次提问，终身受用）。</i>";
+ document.getElementById('profileOut').innerHTML=html;
+};
+
+/* ---------- 软修复调权 ---------- */
+const W={architect:1.0,programmer:1.0,tester:1.0,observer:1.0};
+function renderW(){document.querySelectorAll('#weights .v').forEach(e=>{e.textContent=W[e.dataset.w].toFixed(2);});}
+document.getElementById('healBtn').onclick=()=>{
+ W.observer=Math.min(2,W.observer+0.15);W.architect=Math.min(2,W.architect+0.05);renderW();
+ document.getElementById('healBtn').insertAdjacentHTML('afterend',
+   '<div class="profile-out" style="color:#fca5a5">⚡ 反思器：偏好误判 → 强化观察者权重 +0.15，架构师 +0.05（软修复完成）</div>');
+};
+renderW();
+
+/* ---------- 节律控制 ---------- */
+let prog=0,paused=false,timer=null,noted=false;
+const progEl=document.getElementById('prog'),infoEl=document.getElementById('pauseInfo');
+const horizons=[.17,.33,.5,.67,.83,1];
+const stageNames=["冷启动锚定","左脑执行","右脑观察","仲裁修订","反思修复","交付"];
+function tick(){
+  if(paused)return;
+  prog=Math.min(1,prog+0.04);progEl.style.width=(prog*100)+'%';
+  const reached=horizons.findIndex(x=>prog>=x);
+  if(reached>=0&&reached<stageNames.length-1&&!tick._shown?.includes(reached)){
+    tick._shown=tick._shown||[];tick._shown.push(reached);
+    infoEl.innerHTML+='<br>⏱ 预测停时点到达（'+(prog*100).toFixed(0)+'%）：完成阶段「'+stageNames[reached]+'」，适合检查中间结果。';
+  }
+  if(prog>=1){clearInterval(timer);infoEl.innerHTML+='<br>✅ 任务完成并已交付。';}
+}
+document.getElementById('runPause').onclick=()=>{clearInterval(timer);prog=0;paused=false;noted=false;tick._shown=[];
+ progEl.style.width='0%';infoEl.textContent='运行中…';timer=setInterval(tick,180);};
+document.getElementById('pauseBtn').onclick=()=>{if(prog>=1)return;paused=true;
+ infoEl.innerHTML+='<br>⏸ 已暂停（'+Math.round(prog*100)+'%），状态已保存：阶段简报已生成。';};
+document.getElementById('resumeBtn').onclick=()=>{if(!paused)return;paused=false;
+ infoEl.innerHTML+='<br>▶ 已恢复，从快照继续。';timer=setInterval(tick,180);};
+
+/* ---------- 实时时间线回放 ---------- */
+const SCRIPT=[
+ {c:'t-cold',t:'[冷启动] 启动偏好锚定（3-5 题最小探测）'},
+ {c:'t-cold',t:'[画像] 锚定 communication_style = 有结构分点'},
+ {c:'t-cold',t:'[画像] 锚定 aesthetic = 科技蓝数据风'},
+ {c:'t-left',t:'[左脑] architect → 产出实施方案'},
+ {c:'t-left',t:'[左脑] programmer → 产出实现代码'},
+ {c:'t-left',t:'[左脑] tester → 产出测试用例'},
+ {c:'t-right',t:'[右脑] 评分 满意度=0.86 ｜ 偏好命中 ✓'},
+ {c:'t-info',t:'[仲裁] 通过 —— 满意度足够且无偏好误判'},
+ {c:'t-reflex',t:'[反思] 复盘结论：pass'},
+ {c:'t-info',t:'[信息] 反思通过，无需再修'},
+ {c:'t-deliver',t:'[交付] 灵犀交付最终结果（满意度 0.86）'},
+];
+const tl=document.getElementById('tl');
+document.getElementById('playBtn').onclick=()=>{tl.innerHTML='';let i=0;
+ const iv=setInterval(()=>{if(i>=SCRIPT.length){clearInterval(iv);return;}
+   const s=SCRIPT[i++];const d=document.createElement('div');d.className='ev '+s.c;d.textContent=s.t;tl.appendChild(d);tl.scrollTop=tl.scrollHeight;},650);};
+
+/* ---------- 应用场景演示（前端真实生成，与 CLI scenarios.py 同构） ---------- */
+const SCENARIOS={
+  paas:{
+    badge:"个人助理 · 周报生成",
+    desc:"根据你的写作风格自动汇总本周事项、生成周报；写作中途若检测到注意力分散，会主动暂停并保存草稿。",
+    taskHint:"整理本周工作并生成一份结构化周报",
+    verify_markers:[
+      ["本周完成","本周工作","本周进展","本周总结"],
+      ["进行中","进行中事项","在办"],
+      ["风险","阻塞","问题","风险与阻塞"],
+      ["下周重点","下周计划","下周安排","下周"]
+    ],
+    verify_excludes:[
+      ["本周完成","本周工作","本周进展","本周总结"],
+      ["进行中","在办"],
+      ["风险","阻塞","问题","风险与阻塞"],
+      ["下周","下周重点","下周计划","下周安排"]
+    ],
+    timeline:[
+      {c:'t-cold',t:'[冷启动] 加载画像：communication_style=有结构分点'},
+      {c:'t-left',t:'[左脑] architect → 收集本周待办/会议，梳理为 4 个主题'},
+      {c:'t-left',t:'[左脑] programmer → 按「分点+结论先行」风格拟稿'},
+      {c:'t-left',t:'[左脑] tester → 校对语气、排版、错别字'},
+      {c:'t-right',t:'[右脑] 评分 满意度=0.88 ｜ 风格匹配 ✓'},
+      {c:'t-pause',t:'[节律] 检测到注意力分散 → 自动暂停，草稿已保存'},
+      {c:'t-deliver',t:'[交付] 周报已生成（满意度 0.88）'}
+    ]
+  },
+  biz:{
+    badge:"商业分析 · 数据可视化",
+    desc:"执行市场数据爬取、清洗、建模与可视化；右脑按你的审美习惯自动调整图表配色与排版（科技蓝数据风）。",
+    taskHint:"分析上半年销售额并生成可视化图表",
+    verify_markers:[
+      ["图表","可视化","chart","柱状图","折线图","饼图","plot","render"],
+      ["趋势","增长","环比","同比","建模","模型"],
+      ["数据","销售额","sales","df","清洗","分析"]
+    ],
+    verify_excludes:[
+      ["图表","画图","画","可视化","图","柱状图","饼图","折线图","配图"],
+      ["趋势","增长","环比","同比","建模","模型"],
+      []
+    ],
+    timeline:[
+      {c:'t-cold',t:'[冷启动] 加载画像：aesthetic=科技蓝数据风'},
+      {c:'t-left',t:'[左脑] architect → 拆解：爬取→清洗→建模→可视化'},
+      {c:'t-left',t:'[左脑] programmer → 清洗异常值，建立销售趋势模型'},
+      {c:'t-left',t:'[左脑] tester → 校验数据口径与图表准确性'},
+      {c:'t-right',t:'[右脑] 评分 满意度=0.91 ｜ 配色命中 科技蓝 ✓'},
+      {c:'t-info',t:'[仲裁] 通过 —— 图表配色与排版符合偏好'},
+      {c:'t-deliver',t:'[交付] 可视化报告已生成（满意度 0.91）'}
+    ]
+  },
+  dev:{
+    badge:"软件研发 · 需求到用例",
+    desc:"AI 架构师拆解需求 → AI 程序员编码 → AI 测试员生成用例，全程根据代码风格库自适应。",
+    taskHint:"实现去重并保持原顺序的函数",
+    timeline:[
+      {c:'t-cold',t:'[冷启动] 加载画像：detail_level=完整可复现'},
+      {c:'t-left',t:'[左脑] architect → 拆解需求为接口/边界/异常分支'},
+      {c:'t-left',t:'[左脑] programmer → 按代码风格库编写实现'},
+      {c:'t-left',t:'[左脑] tester → 生成典型+边界测试用例'},
+      {c:'t-right',t:'[右脑] 评分 满意度=0.84 ｜ 风格匹配 ✓'},
+      {c:'t-reflex',t:'[反思] 复盘：pass，覆盖率达标'},
+      {c:'t-deliver',t:'[交付] 代码+用例已交付（满意度 0.84）'}
+    ]
+  },
+  "code-review":{
+    badge:"软件研发 · 代码评审",
+    desc:"对给定代码做智能诊脉：定位缺陷与风险点、标注严重性、给出可落地的修复建议与总体结论。",
+    taskHint:"审查这段去重函数并指出问题与改进",
+    verify_markers:[
+      ["问题清单","问题","缺陷","风险点","不足"],
+      ["严重性","严重","severity","等级","优先级","级别"],
+      ["建议","修复","改进","优化","fix"],
+      ["结论","总体","总结","评价","评审结论"]
+    ],
+    verify_excludes:[
+      ["问题清单","问题","缺陷","风险点"],
+      ["严重性","严重","等级","优先级","级别"],
+      ["建议","修复建议","修复","改进","优化"],
+      ["结论","总体","总结","评价"]
+    ],
+    timeline:[
+      {c:'t-cold',t:'[冷启动] 加载画像：communication_style=有结构分点'},
+      {c:'t-left',t:'[左脑] architect → 拆解评审维度：问题/严重性/建议/结论'},
+      {c:'t-left',t:'[左脑] programmer → 通读代码，定位缺陷与风险点'},
+      {c:'t-left',t:'[左脑] tester → 校验评审四要素是否齐全'},
+      {c:'t-right',t:'[右脑] 评分 满意度=0.89 ｜ 结构完整 ✓'},
+      {c:'t-info',t:'[仲裁] 通过 —— 评审覆盖问题清单/严重性/建议/结论'},
+      {c:'t-deliver',t:'[交付] 代码评审报告已生成（满意度 0.89）'}
+    ]
+  },
+  "data-analysis":{
+    badge:"商业分析 · 数据分析洞察",
+    desc:"对数据集做清洗与探索，提炼趋势、分布与关键结论；可视化图表为可选项（用户可要求省略）。",
+    taskHint:"分析上半年销售额并给出关键结论",
+    verify_markers:[
+      ["数据","数据集","样本","df","清洗","预处理"],
+      ["趋势","增长","下降","环比","同比","分布","波动"],
+      ["结论","洞察","insight","发现","关键结论"],
+      ["图表","可视化","chart","图","柱状图","折线图"]
+    ],
+    verify_excludes:[
+      [],
+      ["趋势","增长","下降","环比","同比","分布"],
+      ["结论","洞察","建议","关键结论"],
+      ["图表","画图","画","可视化","图","柱状图","饼图","折线图"]
+    ],
+    timeline:[
+      {c:'t-cold',t:'[冷启动] 加载画像：aesthetic=科技蓝数据风'},
+      {c:'t-left',t:'[左脑] architect → 拆解：清洗→探索→结论（图表可选）'},
+      {c:'t-left',t:'[左脑] programmer → 清洗异常值，刻画趋势与分布'},
+      {c:'t-left',t:'[左脑] tester → 校验数据口径与结论可靠性'},
+      {c:'t-right',t:'[右脑] 评分 满意度=0.90 ｜ 洞察命中 ✓'},
+      {c:'t-info',t:'[仲裁] 通过 —— 覆盖数据/趋势/关键结论（图表依用户要求）'},
+      {c:'t-deliver',t:'[交付] 数据分析洞察报告已生成（满意度 0.90）'}
+    ]
+  }
+};
+
+/* —— 与 core/scenarios.py 对齐的离线生成逻辑 —— */
+function devFn(task){const low=(task||"").toLowerCase();
+  if(/斐波那契|fibonacci|fib/.test(low))return"fibonacci";
+  if(/去重|dedup|unique/.test(low))return"dedupe";
+  if(/排序|sort/.test(low))return"sort_arr";
+  return"solve";}
+function devCode(task){const fn=devFn(task);
+  if(fn==="dedupe")return 'def dedupe(items):\n    """去重并保持原顺序，兼容任意可哈希元素。"""\n    seen = set()\n    out = []\n    for it in items:\n        if it not in seen:\n            seen.add(it)\n            out.append(it)\n    return out';
+  if(fn==="fibonacci")return 'def fibonacci(n):\n    """返回斐波那契数列第 n 项（n>=0）。"""\n    if not isinstance(n, int) or n < 0:\n        raise ValueError("n 必须为非负整数")\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a';
+  return `def ${fn}(items):\n    """${task.trim()} 处理并返回结果。"""\n    return list(items)`;}
+
+function mockArchitect(s,task){const plan=
+  s==="paas"?{task:task,steps:["收集本周待办/会议/进展","按「有结构分点」风格组织为 4 个主题","自检语气与排版一致性"],acceptance:"周报清晰分点、含风险与下周重点、且风格贴合用户偏好。",style_hint:"遵循用户偏好：沟通风格=有结构分点。"}:
+  s==="biz"?{task:task,steps:["爬取市场销售数据","清洗异常值/缺失项","建立上半年销售趋势模型","生成可视化图表（科技蓝数据风）"],acceptance:"图表准确反映趋势，配色与排版符合审美偏好。",style_hint:"图表配色遵循 科技蓝数据风。"}:
+  s==="code-review"?{task:task,steps:["通读代码，定位缺陷与风险点","按严重性分级（高/中/低）","给出可落地的修复建议","形成总体评审结论"],acceptance:"评审覆盖问题清单、严重性、修复建议与结论四个要素。",style_hint:"遵循用户偏好：沟通风格=有结构分点。"}:
+  s==="data-analysis"?{task:task,steps:["加载数据集并清洗异常值/缺失项","探索趋势、分布与波动","提炼关键结论与洞察","（可选）生成可视化图表"],acceptance:"分析覆盖数据、趋势、关键结论三要素，图表为可选项。",style_hint:"图表配色遵循 科技蓝数据风。"}:
+  {task:task,steps:["明确接口契约与边界条件","选择数据结构与核心算法","编写实现并处理异常分支","补充单元测试与示例"],acceptance:"函数对典型与边界输入均返回正确结果，且有测试覆盖。",style_hint:"遵循用户代码风格库（命名/注释/缩进）。"};
+  return JSON.stringify(plan,null,2);}
+function mockProgrammer(s,task){
+  if(s==="paas")return "# 周报 · 林晓明 第 32 周\n\n## 本周完成\n- 完成 Q3 路线图评审\n- 上线计费模块灰度\n- 修复 3 个 P1 缺陷\n\n## 进行中\n- 数据看板重构（70%）\n- 客户对账自动化（40%）\n\n## 风险 / 阻塞\n- 第三方支付联调延期，已升级协调\n\n## 下周重点\n- 计费全量发布\n- 看板联调\n- 对账试运行";
+  if(s==="biz")return "import pandas as pd\n\n# 1) 清洗：剔除异常值（销售额 < 0 或缺失）\ndf = df[(df.sales >= 0) & df.sales.notna()]\n\n# 2) 建模：上半年销售额趋势（单位：万元）\nmonthly = [42, 58, 51, 73, 69, 88]\nq2_growth = (monthly[-1] - monthly[-2]) / monthly[-2]  # 环比 +27%\n\n# 3) 可视化：科技蓝数据风柱状图（见 render_chart）\nrender_chart(monthly, title='上半年销售额（万元）')";
+  if(s==="code-review")return "# 代码评审报告 · dedupe()\n\n## 问题清单\n- 未处理非可哈希元素（如 dict）的 TypeError 风险\n- 缺少对 None 输入的防御\n\n## 严重性\n- 非可哈希元素：高（运行时崩溃）\n- None 输入：中（需明确契约）\n\n## 修复建议\n- 入参加 `if not isinstance(items, (list, tuple))` 类型校验\n- 文档补充「元素需可哈希」约束\n\n## 结论\n整体实现简洁、时间复杂度 O(n)，建议补充类型校验后合入。\n";
+  if(s==="data-analysis")return "# 上半年销售数据分析\n\n## 数据\n- 样本：6 个月销售额（单位：万元），已剔除异常值\n- 数据口径一致，无缺失\n\n## 趋势\n- Q2 环比 +27%，整体呈上升态势\n- 6 月达峰值 88 万，波动可控\n\n## 关键结论\n- 增长主要来自华东区，建议加大投放\n- 下季度预估环比 +15%\n\n## 图表\n- 见附图：上半年销售额柱状图（科技蓝数据风）\n";
+  return devCode(task);}
+function mockTester(s,task){const cases=
+  s==="paas"?[{check:"语气符合偏好（有结构分点）",result:"pass"},{check:"无错别字",result:"pass"},{check:"排版一致",result:"pass"},{check:"风险与下周重点已标注",result:"pass"}]:
+  s==="biz"?[{check:"数据口径一致（万元）",result:"pass"},{check:"无缺失/异常值",result:"pass"},{check:"图表渲染正确",result:"pass"},{check:"配色符合 科技蓝数据风",result:"pass"}]:
+  s==="code-review"?[{check:"问题清单已列出",result:"pass"},{check:"严重性已分级",result:"pass"},{check:"修复建议可落地",result:"pass"},{check:"结论明确",result:"pass"}]:
+  s==="data-analysis"?[{check:"数据口径一致",result:"pass"},{check:"趋势已刻画",result:"pass"},{check:"关键结论已提炼",result:"pass"},{check:"图表（如要求）已生成",result:"pass"}]:
+  (fn=>[{case:`${fn}([1,2,2,3])`,expect:"[1,2,3]"},{case:`${fn}(['a','a','b'])`,expect:"['a','b']"},{case:`${fn}([])`,expect:"[]"}])(devFn(task));
+  return JSON.stringify({cases:cases},null,2);}
+
+function renderReportCards(md){const lines=(md||"").split("\n");let html="",title=null,cur=null,items=[];
+  function flush(){if(cur!==null){html+=`<div class="rep-card"><b>${esc(cur)}</b><ul style="margin:4px 0 0;padding-left:18px">`+items.map(i=>`<li>${esc(i)}</li>`).join("")+"</ul></div>";cur=null;items=[];}}
+  for(const ln of lines){if(ln.startsWith("# ")){title=ln.slice(2);}else if(ln.startsWith("## ")){flush();cur=ln.slice(3);}else if(ln.startsWith("- ")){items.push(ln.slice(2));}}
+  flush();
+  return `<div class="rep-card"><b>📋 ${esc(title||"周报")}</b></div>`+html;}
+function bizChart(){
+  const labels=["1月","2月","3月","4月","5月","6月"],vals=[42,58,51,73,69,88];
+  const max=Math.max(...vals),W=260,H=120,pad=18,step=(W-pad*2)/vals.length;let bars="";
+  vals.forEach((v,i)=>{const h=(v/max)*(H-pad*2);const x=pad+i*step+4;const y=H-pad-h;
+    bars+=`<rect class="bar" x="${x}" y="${y}" width="${step-10}" height="${h}" rx="3"><title>${labels[i]}: ${v}</title></rect>`;
+    bars+=`<text x="${x+(step-10)/2}" y="${y-4}" fill="#8AA0C8" font-size="9" text-anchor="middle">${v}</text>`;
+    bars+=`<text x="${x+(step-10)/2}" y="${H-4}" fill="#8AA0C8" font-size="9" text-anchor="middle">${labels[i]}</text>`;});
+  return `<svg class="chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img">
+    <defs><linearGradient id="scGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3B82F6"/><stop offset="100%" stop-color="#22D3EE"/></linearGradient></defs>
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#22304F"/>
+    ${bars}</svg>
+    <div class="rep-card"><b>📈 上半年销售额（万元）</b><br>Q2 环比 +27%，科技蓝数据风配色已应用。</div>`;}
+
+function genScenario(key,task){if(!task)task=SCENARIOS[key].taskHint;
+  return {task:task,plan:mockArchitect(key,task),code:mockProgrammer(key,task),tests:mockTester(key,task)};}
+function renderScenarioOut(key,gen){
+  let h='<div class="sc-output">';
+  h+=`<h3>① 架构师 · 实施方案</h3><pre>${esc(gen.plan)}</pre>`;
+  h+="<h3>② 程序员 · 产出</h3>";
+  if(key==="paas"||key==="code-review"||key==="data-analysis")h+=renderReportCards(gen.code);
+  else if(key==="biz")h+=`<pre>${esc(gen.code)}</pre>`+bizChart();
+  else h+=`<pre>${esc(gen.code)}</pre>`;
+  h+=`<h3>③ 测试员 · 用例</h3><pre>${esc(gen.tests)}</pre>`;
+  h+=renderVerification(key,gen);
+  return h+"</div>";}
+
+/* —— 真实验证（与 core/verify.py 同构）：paas/biz 结构化验收，dev pytest —— */
+/* 统一优先级：用户显式排除的要素 > 场景模板必备要素，排除项不强制补全、仅标注省略 */
+const STRONG_EXCL=["不用","不要","不写","不列","不加","不附","不需","无需","别写","别","省略","省去","跳过","免","不附上"];
+const LIMIT_INCL=["只列","只要","只给","仅","仅限","只做","只需要"];
+const PUNCT=["，","。","；","、",",",".",";","！","?","？","!","\n"];
+/* 作用域强排除：只有落在该强排除信号（不用/不要）之后、到下一个标点之间的 exclude 词，
+   才判定本组被排除——避免「不用画图」污染同句其他含 exclude 词的组（如结论组）。
+   与 core/verify.py 的 _strong_excluded 同构。 */
+function strongExcluded(taskLow,exclWords){
+  if(!exclWords||!exclWords.length)return false;
+  for(const sig of STRONG_EXCL){
+    let sj=taskLow.indexOf(sig);
+    while(sj!==-1){
+      const rest=taskLow.slice(sj+sig.length);
+      let end=rest.length;
+      for(const p of PUNCT){const pj=rest.indexOf(p);if(pj!==-1)end=Math.min(end,pj);}
+      const scope=rest.slice(0,end);
+      if(exclWords.some(w=>scope.includes(w.toLowerCase())))return true;
+      sj=taskLow.indexOf(sig,sj+1);
+    }
+  }
+  return false;
+}
+/* 否定感知的要素覆盖判定（与 core/verify.py 的 _group_covered 同构）：
+   要素词出现在交付物中、且前方窗口（6 字符）无否定线索，才算覆盖。
+   根治「未包含风险」被裸子串匹配误判成已覆盖的文字游戏。 */
+const NEG_CUES=["未","不","无","没","省略","省去","不含","无需","免","别"];
+const NEG_RE_EN=/\b(no|without|skip|not|avoid|none|free)\b/i;
+function negatedBefore(text,i){
+  const lineStart=text.lastIndexOf("\n",i-1);
+  const pre=text.slice(lineStart+1,i);
+  if(NEG_CUES.some(c=>pre.includes(c)))return true;
+  if(NEG_RE_EN.test(pre))return true;
+  return false;
+}
+function groupCovered(group,low){
+  for(const t of group){
+    const tl=t.toLowerCase();let i=low.indexOf(tl);
+    while(i!==-1){ if(!negatedBefore(low,i))return true; i=low.indexOf(tl,i+tl.length); }
+  }
+  return false;
+}
+function verifyScenario(key,gen){
+  const sc=SCENARIOS[key];
+  const markers=(sc.verify_markers)||[];
+  const excludes=(sc.verify_excludes)||[];
+  const low=(gen.code||"").toLowerCase();
+  const taskLow=(gen.task||"").toLowerCase();
+  const hasLimit=LIMIT_INCL.some(s=>taskLow.includes(s));
+  let strongStart=taskLow.length;
+  STRONG_EXCL.forEach(s=>{const j=taskLow.indexOf(s);if(j!==-1)strongStart=Math.min(strongStart,j);});
+  const named=markers.map((g,i)=>{
+    const excl=(excludes[i]&&excludes[i].length)?excludes[i]:[];
+    if(!hasLimit)return false;
+    for(const sig of LIMIT_INCL){const sj=taskLow.indexOf(sig);if(sj===-1)continue;
+      const zone=taskLow.slice(sj+sig.length,strongStart);
+      if(excl.some(w=>zone.includes(w.toLowerCase())))return true;}
+    return false;
+  });
+  const checks=[],skipped=[];
+  markers.forEach((g,i)=>{
+    const excl=(excludes[i]&&excludes[i].length)?excludes[i]:[];
+    if(named[i]){
+      const hit=groupCovered(g,low);
+      checks.push({label:g.join(" / "),hit:hit,skipped:false});
+      return;
+    }
+    if(strongExcluded(taskLow,excl)){skipped.push(g.join(" / "));checks.push({label:g.join(" / "),hit:false,skipped:true});return;}
+    if(hasLimit){skipped.push(g.join(" / "));checks.push({label:g.join(" / "),hit:false,skipped:true});return;}
+    const hit=groupCovered(g,low);
+    checks.push({label:g.join(" / "),hit:hit,skipped:false});
+  });
+  const missing=checks.filter(c=>!c.hit&&!c.skipped).length;
+  const passed=missing===0;
+  return {passed:passed,checks:checks,skipped:skipped};
+}
+function renderVerification(key,gen){
+  if(key==="dev"){
+    return `<h3>④ 真实验证 · pytest 实测</h3>`+
+      `<div class="rep-card">Mock 演示下测试用例为占位；接入真实模型后，编排器把 <code>solution</code>+<code>tests</code> 写入临时目录真跑 <code>pytest</code>，失败则把报错回灌反思修复器自动修复（最多 3 轮），并如实标注「通过 / 需人工复核」。</div>`;
+  }
+  const v=verifyScenario(key,gen);
+  let h=`<h3>④ 真实验证 · 结构化验收（Reflexion 落地）</h3>`;
+  h+=`<div class="rep-card"><b>验收结论：</b>&nbsp;`+
+     (v.passed?`<span class="ok">✅ 通过</span> — 交付物覆盖用户要求的必备要素`:
+               `<span class="warn">❌ 需人工复核</span> — 部分必备要素缺失`)+
+     `</div>`;
+  h+=`<ul style="margin:8px 0;padding-left:18px">`;
+  v.checks.forEach(c=>{
+    const icon=c.hit?'✅':(c.skipped?'⏭':'❌');
+    const note=c.skipped?' <i style="color:var(--muted)">（已按用户要求省略）</i>':'';
+    h+=`<li>${icon} <b>${esc(c.label)}</b>${note}</li>`;
+  });
+  h+=`</ul>`;
+  h+=`<div class="profile-out" style="font-size:12px">注：Mock 演示下交付物由前端按场景生成并自动通过；接入真实模型后，此处由反思修复器真实校验，缺失要素会自动补全（最多 3 轮）。用户显式排除的要素不强制补全，仅标注省略。</div>`;
+  return h;
+}
+
+/* ---------- 预置「用户排除要素」示例（打开即展示诚实省略能力） ---------- */
+const EXCLUDE_SAMPLES={
+  paas:{task:"帮我写一份极简周报，只列本周完成和进行中两件事就够了，不要写风险和下周计划",
+    code:`# 周报 · 极简版（第 32 周）
+
+## 本周完成
+- 完成 Q3 路线图评审
+- 上线计费模块灰度
+- 修复 3 个 P1 缺陷
+
+## 进行中
+- 数据看板重构（70%）
+- 客户对账自动化（40%）
+
+（按你的要求，未包含「风险」与「下周计划」）`},
+  biz:{task:"分析一下这周销售额，上周50万这周62万，涨了24，帮我出个简单分析就行，不用画",
+    code:`import pandas as pd
+
+# 1) 数据：本周销售额 62 万，上周 50 万
+last_week = 50   # 万元
+this_week = 62
+
+# 2) 趋势：环比增长
+growth = (this_week - last_week) / last_week   # +0.24（涨 24%）
+
+# 按你的要求，本次不做可视化（不用画）`},
+  "code-review":{task:"审查这个去重函数，只列出问题和严重性，不用给修复建议",
+    code:`# 代码评审报告
+
+## 问题清单
+- 未处理非可哈希元素（如 list 作 key 会抛 TypeError）
+- 对超大输入为线性扫描，存在 O(n²) 隐患
+
+## 严重性
+- 高：潜在运行时崩溃
+- 中：大列表下性能退化`},
+  "data-analysis":{task:"分析上半年销售额数据：1月42万、2月58万、3月51万、4月73万、5月69万、6月88万，给出关键结论，不用画图",
+    code:`# 上半年销售数据分析（1-6 月，单位：万元）
+
+## 数据
+- 已剔除异常值，6 个月样本完整：42 / 58 / 51 / 73 / 69 / 88
+
+## 趋势
+- 整体上行，6 月 88 万为峰值
+- Q2（4-6 月）环比 +27%，增长加速
+
+## 关键结论
+- 华东区贡献最大增量，建议下季度加大投放
+- 2 月回落为季节性波动，非结构性下滑
+
+（按你的要求，未生成可视化图表）`}
+};
+function loadExcludeSample(){
+  const s=SCENARIOS[curScene];
+  const ex=EXCLUDE_SAMPLES[curScene];
+  if(!ex)return;
+  document.getElementById('scTask').value=ex.task;
+  scTL.innerHTML="";scOut.innerHTML="";
+  let i=0;clearInterval(scTimer);
+  scTimer=setInterval(()=>{
+    if(i>=s.timeline.length){clearInterval(scTimer);
+      const gen={task:ex.task,plan:mockArchitect(curScene,ex.task),code:ex.code,tests:mockTester(curScene,ex.task)};
+      scOut.innerHTML=
+        `<div class="profile-out" style="font-size:12px;color:#7dd3fc">⏭ 已载入「用户排除要素」预置示例：④ 验收将标注诚实省略的项（不会强制补全）。点击「▶ 运行该场景」可重新生成全要素版本。</div>`+
+        renderScenarioOut(curScene,gen);
+      return;}
+    const e=s.timeline[i++];const d=document.createElement('div');
+    d.className='ev '+e.c;d.textContent=e.t;scTL.appendChild(d);scTL.scrollTop=scTL.scrollHeight;
+  },620);
+}
+
+let curScene="paas";
+const scOut=document.getElementById('scOutput'),scTL=document.getElementById('scTimeline');
+function showScenario(key){
+  curScene=key;const s=SCENARIOS[key];
+  document.getElementById('scenarioBadge').textContent=s.badge;
+  document.getElementById('scenarioDesc').textContent=s.desc;
+  document.getElementById('scTask').value=s.taskHint;
+  scTL.innerHTML="";
+  scOut.innerHTML="<i style='color:var(--muted)'>点击「运行该场景」查看双脑交付物（由前端按场景真实生成，与 CLI 同构）。</i>";
+}
+document.querySelectorAll('#scTabs .tab').forEach(t=>{
+  t.onclick=()=>{document.querySelectorAll('#scTabs .tab').forEach(x=>x.classList.remove('sel'));
+    t.classList.add('sel');showScenario(t.dataset.s);};
+});
+let scTimer=null;
+document.getElementById('scRun').onclick=()=>{
+  const s=SCENARIOS[curScene];
+  scTL.innerHTML="";scOut.innerHTML="";let i=0;const task=document.getElementById('scTask').value.trim();
+  clearInterval(scTimer);
+  scTimer=setInterval(()=>{
+    if(i>=s.timeline.length){clearInterval(scTimer);
+      scOut.innerHTML=renderScenarioOut(curScene,genScenario(curScene,task));return;}
+    const e=s.timeline[i++];const d=document.createElement('div');
+    d.className='ev '+e.c;d.textContent=e.t;scTL.appendChild(d);scTL.scrollTop=scTL.scrollHeight;
+  },620);
+};
+document.getElementById('scSample').onclick=loadExcludeSample;
+showScenario(curScene);
+loadExcludeSample(); // 默认以「用户排除要素」示例开场，凸显诚实省略能力
+
+/* ---------- 运行报告导出（与 CLI --report 同构） ---------- */
+const PROFILE_KEYS=["communication_style","detail_level","aesthetic","risk_tolerance","collaboration"];
+function collectReport(){
+  const profile={};PROFILE_KEYS.forEach((k,i)=>{profile[k]=sel[i]||"（未作答）";});
+  profile.confidence={};PROFILE_KEYS.forEach(k=>profile.confidence[k]=sel[k]!==undefined?0.75:0.5);
+  profile.learned_signals=Object.keys(sel).length;
+  const hits=PROFILE_KEYS.filter((k,i)=>sel[i]!==undefined);
+  // 复用「应用场景」区块的同一套生成逻辑，保证报告与演示页一致、与 CLI 同构
+  const _task=document.getElementById('scTask').value.trim();
+  const _ex=EXCLUDE_SAMPLES[curScene];
+  const gen=(_ex&&_task===_ex.task)
+    ? {task:_ex.task,plan:mockArchitect(curScene,_ex.task),code:_ex.code,tests:mockTester(curScene,_ex.task)}
+    : genScenario(curScene,_task);
+  const verification=verifyScenario(curScene, gen);
+  return {
+    task:gen.task, scenario:curScene, engine:"网页演示 Mock（与 CLI 同构）",
+    satisfaction:0.86, profile, weights:Object.assign({},W),
+    artifacts:gen,
+    verification:verification,
+    rounds:[{round:1,satisfaction:0.86,arb_revise:false,verdict:"pass",reflex_note:"反思通过，无需再修"}],
+    preferences:{hits,misses:[]},
+    horizons:stageNames.map((s,i)=>({at:(i+1)/stageNames.length,reason:"完成阶段『"+s+"』"})),
+    progress:prog, paused:paused,
+    timeline:SCRIPT.map(s=>({message:s.t}))
+  };
+}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+/* 报告内的「真实验证」段（与 CLI --report 同构；dev→pytest 说明，paas/biz→结构化验收清单） */
+function renderVerificationHTML(key,v){
+  if(key==="dev"||!v){
+    return `<h3>④ 真实验证 · pytest 实测</h3>`+
+      `<p class="meta">Mock 演示下测试用例为占位；接入真实模型后，编排器把 <code>solution</code>+<code>tests</code> 写入临时目录真跑 <code>pytest</code>，失败则把报错回灌反思修复器自动修复（最多 3 轮），并如实标注「通过 / 需人工复核」。</p>`;
+  }
+  let h=`<h3>④ 真实验证 · 结构化验收（Reflexion 落地）</h3>`;
+  h+=`<p><b>验收结论：</b>&nbsp;`+
+     (v.passed?`<span class="ok">✅ 通过</span> — 交付物覆盖用户要求的必备要素`:
+               `<span class="warn">❌ 需人工复核</span> — 部分必备要素缺失`)+`</p>`;
+  h+=`<ul>`;
+  (v.checks||[]).forEach(c=>{
+    const icon=c.hit?'✅':(c.skipped?'⏭':'❌');
+    const note=c.skipped?' <i style="color:var(--muted)">（已按用户要求省略）</i>':'';
+    h+=`<li>${icon} <b>${esc(c.label)}</b>${note}</li>`;
+  });
+  h+=`</ul>`;
+  h+=`<p class="meta">注：Mock 演示下交付物由前端按场景生成并自动通过；接入真实模型后，此处由反思修复器真实校验，缺失要素会自动补全（最多 3 轮）。用户显式排除的要素不强制补全，仅标注省略。</p>`;
+  return h;
+}
+function downloadBlob(name,content,mime){
+  const b=new Blob([content],{type:mime});const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);
+}
+function renderReportHTML(rep){
+  const prof=rep.profile,conf=prof.confidence||{};
+  const prow=PROFILE_KEYS.map(k=>`<tr><td>${esc(k)}</td><td>${esc(prof[k])}</td><td><div class='bar'><span style='width:${(conf[k]||0)*100}%'></span></div></td></tr>`).join("");
+  const rrow=(rep.rounds||[]).map(r=>`<tr><td>${r.round}</td><td>${r.satisfaction}</td><td>${r.arb_revise?'修订':'通过'}</td><td class='${r.verdict==="pass"?"ok":"warn"}'>${esc(r.verdict==="pass"?"通过 · 无需修复":"软修复")}</td><td>${esc(r.reflex_note)}</td></tr>`).join("")||"<tr><td colspan=5>无</td></tr>";
+  const tl=(rep.timeline||[]).map(e=>`<tr><td>${esc(e.message)}</td></tr>`).join("");
+  const hz=(rep.horizons||[]).map(h=>`<li><b>${(h.at*100).toFixed(0)}%</b> — ${esc(h.reason)}</li>`).join("")||"<li>无</li>";
+  const pauseBadge=rep.paused?"<span class='pill pause'>已暂停</span>":"<span class='pill done'>完整交付</span>";
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>灵犀 SynergyOS 运行报告</title><style>
+  :root{--bg:#0b1020;--card:#141b33;--ink:#e8edff;--muted:#9aa6c8;--accent:#4f9dff;--line:#23304f;--ok:#37d39b;--warn:#ffb454}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;padding:32px}
+  .wrap{max-width:980px;margin:0 auto}header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:24px}
+  h1{margin:0 0 6px;font-size:26px}.meta{color:var(--muted);font-size:13px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .done{background:rgba(55,211,155,.15);color:var(--ok)}.pause{background:rgba(255,180,84,.15);color:var(--warn)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0}
+  h2{margin:0 0 12px;font-size:18px;color:var(--accent)}table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}.code{background:#0c1226;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#cdd8ff;white-space:pre}
+  .bar{height:8px;background:#0c1226;border-radius:6px;overflow:hidden;min-width:80px}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7ce0ff)}
+  .sat{font-size:22px;font-weight:700;color:var(--ok)}.ok{color:var(--ok)}.warn{color:var(--warn)}ul{margin:6px 0;padding-left:20px}li{margin:4px 0}p{margin:6px 0}
+  </style></head><body><div class="wrap"><header><h1>灵犀 SynergyOS · 运行报告</h1>
+  <div class="meta">引擎 ${esc(rep.engine)} ｜ ${pauseBadge} ｜ 网页端同构报告</div></header>
+  <section><h2>任务</h2><p>${esc(rep.task)}</p><p>右脑满意度评分 <span class="sat">${rep.satisfaction}</span></p></section>
+  <section><h2>一、冷启动偏好锚定（用户画像）</h2><table><thead><tr><th>维度</th><th>偏好值</th><th>置信度</th></tr></thead><tbody>${prow}</tbody></table>
+   <p class="meta">已学习信号数：${prof.learned_signals||0}</p></section>
+  <section><h2>二、双脑协作 · 左脑产出</h2>
+   <h3>实施方案</h3><div class="code">${esc(rep.artifacts.plan)}</div>
+   <h3>实现代码</h3><div class="code">${esc(rep.artifacts.code)}</div>
+   <h3>测试用例</h3><div class="code">${esc(rep.artifacts.tests)}</div>
+   ${renderVerificationHTML(rep.scenario, rep.verification)}</section>
+  <section><h2>三、自适应生长与修复（Reflexion）</h2><table><thead><tr><th>轮次</th><th>满意度</th><th>仲裁</th><th>反思结论</th><th>说明</th></tr></thead><tbody>${rrow}</tbody></table>
+   <p>软修复后智能体权重：<code>${esc(JSON.stringify(rep.weights))}</code></p></section>
+  <section><h2>四、智能节律控制（Pause Horizon）</h2><ul>${hz}</ul>
+   ${rep.paused?`<p class="brief">⏸ 已暂停于进度 ${Math.round(rep.progress*100)}%，阶段简报已生成。</p>`:""}</section>
+  <section><h2>五、协作时间线</h2><table><tbody>${tl}</tbody></table></section>
+  <p class="meta">本报告由灵犀 SynergyOS 网页演示生成（与 CLI --report 同构）。</p></div></body></html>`;
+}
+function buildReportMD(rep){
+  const p=rep.profile,c=p.confidence||{};
+  let m="# 灵犀 SynergyOS · 运行报告\n\n## 任务\n\n"+rep.task+"\n\n";
+  m+="## 一、冷启动偏好锚定\n|维度|偏好值|置信度|\n|---|---|---|\n";
+  PROFILE_KEYS.forEach(k=>{m+=`|${k}|${p[k]}|${(c[k]||0).toFixed(2)}|\n`;});
+  m+=`\n已学习信号数：${p.learned_signals||0}\n\n`;
+  m+="## 二、双脑协作\n\n右脑满意度："+rep.satisfaction+"\n\n### 实施方案\n```\n"+rep.artifacts.plan+"\n```\n### 实现代码\n```python\n"+rep.artifacts.code+"\n```\n### 测试用例\n```\n"+rep.artifacts.tests+"\n```\n";
+  if(rep.scenario==="dev"||!rep.verification){
+    m+="\n### ④ 真实验证 · pytest 实测\n\nMock 演示下测试用例为占位；接入真实模型后，编排器把 `solution`+`tests` 写入临时目录真跑 `pytest`，失败则回灌反思修复器自动修复（最多 3 轮），如实标注「通过 / 需人工复核」。\n";
+  }else{
+    const v=rep.verification;
+    m+=`\n### ④ 真实验证 · 结构化验收（Reflexion 落地）\n\n**验收结论：** ${v.passed?'✅ 通过 — 交付物覆盖全部必备要素':'❌ 需人工复核 — 部分必备要素缺失'}\n\n`;
+    (v.checks||[]).forEach(c=>{m+=`- ${c.hit?'✅':'❌'} **${c.label}**\n`;});
+    m+="\n注：Mock 演示下交付物由前端按场景生成并自动通过；接入真实模型后由反思修复器真实校验，缺失要素自动补全（最多 3 轮）。\n";
+  }
+  m+="\n## 三、自适应生长与修复\n|轮次|满意度|仲裁|结论|说明|\n|---|---|---|---|---|\n";
+  (rep.rounds||[]).forEach(r=>{m+=`|${r.round}|${r.satisfaction}|${r.arb_revise?'修订':'通过'}|${r.verdict}|${r.reflex_note}|\n`;});
+  m+="\n软修复后权重："+JSON.stringify(rep.weights)+"\n\n";
+  m+="## 四、智能节律控制\n";
+  (rep.horizons||[]).forEach(h=>{m+=`- ${(h.at*100).toFixed(0)}% — ${h.reason}\n`;});
+  m+="\n## 五、协作时间线\n";
+  (rep.timeline||[]).forEach(e=>{m+="- "+e.message+"\n";});
+  return m;
+}
+document.getElementById('repPreview').onclick=()=>{
+  const w=window.open('','_blank');w.document.write(renderReportHTML(collectReport()));w.document.close();
+  document.getElementById('repOut').innerHTML="✅ 报告已在新标签页打开（HTML）。";
+};
+document.getElementById('repMd').onclick=()=>{
+  downloadBlob("synergyos_report_demo.md",buildReportMD(collectReport()),"text/markdown;charset=utf-8");
+  document.getElementById('repOut').innerHTML="✅ Markdown 报告已下载。";
+};
+</script>
+</body>
+</html>
