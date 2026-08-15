@@ -3,6 +3,8 @@
 > 心有灵犀一点通 —— 以用户为中心的多角色 AI 智能体网络。
 > 从「被动应答」走向「主动共生」：懂得在正确的时间做正确的事，在适当的时候保持沉默。
 
+![SynergyOS](assets/social-preview.png)
+
 [![CI](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml)
 [![Deploy demo](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml)
 [![在线演示](https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%BC%94%E7%A4%BA-Live-00b4d8?logo=githubpages&logoColor=white)](https://shadowquill.github.io/synergyos/)
