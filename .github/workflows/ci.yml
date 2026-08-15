@@ -15,6 +15,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
+          # 与仓库根目录 .python-version 保持一致（开发/CI 统一用 3.11，
+          # 避免本地高版本 Python 放行、CI 3.11 报 f-string 兼容性 SyntaxError）
           python-version: "3.11"
 
       - name: Install
