@@ -146,11 +146,25 @@ def ask_cold_start() -> dict:
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description="灵犀 SynergyOS 演示")
+    p = argparse.ArgumentParser(
+        prog="synergyos",
+        description="灵犀 · 自进化协作智能体（SynergyOS）：以用户为中心的多角色 AI 智能体网络。"
+                    "在终端跑通双脑协作 + 冷启动偏好锚定 + Reflexion 反思自愈 + 智能节律控制全链路。",
+        epilog="示例：\n"
+               "  python -m synergyos.cli                        # 交互式冷启动 + 默认任务\n"
+               "  python -m synergyos.cli --task \"写一个去重函数\"   # 指定任务\n"
+               "  python -m synergyos.cli --auto                 # 跳过提问，用默认画像\n"
+               "  python -m synergyos.cli --scenario biz         # 按应用场景真跑\n"
+               "  python -m synergyos.cli --scenario dev --report --emit   # 研发场景+报告+落盘\n"
+               "  python -m synergyos.cli --pause 0.5            # 在 50% 进度时暂停\n"
+               "\n说明：默认用 mock 引擎（零 token）；接入真实大模型见 README 的「模型接入策略」。",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     p.add_argument("--task", default=None,
                    help="指定任务；不填则按 --scenario 的默认任务提示")
     p.add_argument("--scenario", choices=VALID_SCENARIOS, default=None,
-                   help="应用场景：paas=个人助理周报 / biz=商业分析可视化 / dev=软件研发 / code-review=代码评审 / data-analysis=数据分析洞察")
+                   help="应用场景：paas=个人助理周报 / biz=商业分析可视化 / dev=软件研发 / "
+                        "code-review=代码评审 / data-analysis=数据分析洞察")
     p.add_argument("--auto", action="store_true", help="跳过提问，用默认画像")
     p.add_argument("--pause", type=float, default=None,
                    help="在指定进度(0-1)时触发用户暂停")
