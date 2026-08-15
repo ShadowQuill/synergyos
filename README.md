@@ -3,6 +3,12 @@
 > 心有灵犀一点通 —— 以用户为中心的多角色 AI 智能体网络。
 > 从「被动应答」走向「主动共生」：懂得在正确的时间做正确的事，在适当的时候保持沉默。
 
+[![CI](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml)
+[![Deploy demo](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org)
+
+📑 文档导航：[Menu](./menu.md)
+
 ## 核心理念
 灵犀不只是一个模型，而是一个 **Multi-Agent 网络**，通过「分工-协作-反思」模拟人类顶级团队：
 - **左脑（执行者）**：逻辑推理、代码生成、数据分析 —— 专注「如何把事做对」。
@@ -83,6 +89,14 @@ python3 -m synergyos.cli --scenario dev --task "实现支持过期时间的 LRU 
 - 场景化产出由 `core/scenarios.py` 定义，引擎在 `scenario` 参数下按场景路由；接入真实大模型时该 mock 不再生效，改由提示词驱动。
 - 产出会进入运行报告（`--report`），报告头显示「应用场景」字段。
 
+## 用户显式排除要素优先级
+当用户在任务里**显式排除**某些要素时，灵犀尊重用户意图而非机械套用模板：
+- 用户说「**不要 / 不用 X**」（强排除）或「**只列 / 只要 X Y**」（限定包含）时，被排除的要素**不再强制补全**。
+- 验收报告诚实标注「⏭ 已按用户要求省略」，而非假装已覆盖。
+- 优先级三态：`限定包含（只列 A B = 包含 A、B，排除其余）` > `强排除（不要 X）` > `模板必备要素`。
+- 规则用**作用域判定**（强排除信号之后到下一个标点之间才生效），避免跨组污染；覆盖判定升级为**行级否定感知边界匹配**，根除「未包含风险」等文字游戏误判。
+- 真实 DeepSeek 验证记录见 [EVIDENCE_EXCLUDE.md](./EVIDENCE_EXCLUDE.md)。
+
 ## 偏好持久化（一次提问，终身受用）
 用户画像默认落盘到 `~/.synergyos/profile.json`，跨会话静默学习累积：
 - 首次运行自动锚定并保存；之后再启动直接加载历史画像，跳过冷启动探测。
@@ -107,6 +121,12 @@ python3 -m synergyos.cli --scenario dev --task "实现支持过期时间的 LRU 
 浏览器打开 `synergyos/demo/index.html`，可交互体验：双脑协作动画、冷启动问答、软修复调权、节律控制、实时协作时间线，以及「应用场景」区块（个人助理周报 / 商业分析可视化 / 软件研发需求到用例三选一，含专属产出与时间线回放）与运行报告导出。
 Logo 源文件见 `synergyos/demo/logo.svg`（莫比乌斯环 + 声波波纹）。
 
+## 在线演示与部署
+- **在线演示（GitHub Pages）**：<https://shadowquill.github.io/synergyos/> —— 由 `.github/workflows/pages.yml` 自动把 `synergyos/demo` 部署，push 到 `main` 即更新。
+- **CI（持续集成）**：`.github/workflows/ci.yml` 在 push / PR 时自动运行 55 项单测（`SYNERGYOS_FORCE_MOCK=1`，零 token 消耗）。
+- **本地提交闸门**：仓库内置 `pre-commit` 钩子，提交前自动跑单测，任一失败即阻断提交，保证上库代码始终绿。
+- 启用 Pages：仓库 `Settings → Pages → Build and deployment → Source` 选择 **GitHub Actions** 即可（首次部署需手动开启这一步）。
+
 ## 结构
 ```
 synergyos/
@@ -117,10 +137,10 @@ synergyos/
 │   ├── brain.py       双脑协作（左脑执行 / 右脑观察 / 仲裁）
 │   ├── reflexion.py   自适应生长与修复
 │   ├── pause.py       智能节律控制
-│   ├── scenarios.py   应用场景（paas/biz/dev）元数据与场景化 mock 产出
+│   ├── scenarios.py   应用场景（paas/biz/dev/code-review/data-analysis）元数据与场景化 mock 产出
 │   └── orchestrator.py 分工-协作-反思 顶层编排
 │   └── report.py      运行报告生成（Markdown / HTML）
-│   └── verify.py      真实验证 + 反思自愈（dev: pytest 实跑+两阶段修复；paas/biz: 结构化验收+补全）
+│   └── verify.py      真实验证 + 反思自愈（dev: pytest 实跑+两阶段修复；其余场景: 结构化验收+补全；支持「用户排除要素优先级」与否定感知边界匹配）
 ├── cli.py             终端演示入口
 └── demo/              index.html + logo.svg
 ```
