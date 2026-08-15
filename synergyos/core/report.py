@@ -160,8 +160,10 @@ def to_markdown(r: Dict) -> str:
                 if v.get("detail"):
                     L.append(f"```\n{v['detail'].strip()}\n```\n")
         elif v.get("passed"):
+            passed_attempts = v.get('attempts', 1)
+            status = passed_attempts == 1 and '一次通过' or f'修复 {v.get("fixes")} 次后通过'
             L.append(f"- ✅ **通过（pytest 实测）**：生成代码经 pytest 实测，"
-                     f"{'一次通过' if v.get('attempts', 1) == 1 else f'修复 {v.get('fixes')} 次后通过'}"
+                     f"{status}"
                      f"（共运行 {v.get('attempts')} 次，模块 `{v.get('module')}`）。\n")
         else:
             L.append(f"- ❌ **未通过（pytest 实测）**：反思修复 {v.get('fixes')} 次后仍失败，需人工复核。\n")

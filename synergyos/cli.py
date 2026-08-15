@@ -231,9 +231,9 @@ def main(argv=None):
                 # paas / biz：结构化验收
                 if v.get("passed"):
                     once = v.get("attempts", 1) == 1
+                    status = '一次通过' if once else f'反思自愈补全 {v.get("fixes")} 次后通过'
                     print(f"\n🔍 真实验证（结构化验收）：✅ 通过"
-                          f"（{'一次通过' if once else f'反思自愈补全 {v.get('fixes')} 次后通过'}"
-                          f"，共运行 {v.get('attempts')} 次）")
+                          f"（{status}，共运行 {v.get('attempts')} 次）")
                     skipped = v.get("skipped") or []
                     if skipped:
                         print(f"   ⏭ 已按用户要求省略：{'；'.join(skipped)}"
@@ -243,8 +243,9 @@ def main(argv=None):
                           f"（补全 {v.get('fixes')} 次后仍缺失：{v.get('detail')}，请人工复核）")
             elif v.get("passed"):
                 once = v.get("attempts", 1) == 1
+                status = '一次通过' if once else f'反思自愈修复 {v.get("fixes")} 次后通过'
                 print(f"\n🔍 真实验证（pytest 实测）：✅ 通过（"
-                      f"{'一次通过' if once else f'反思自愈修复 {v.get('fixes')} 次后通过'}"
+                      f"{status}"
                       f"，共运行 {v.get('attempts')} 次，模块 `{v.get('module')}`）")
             else:
                 print(f"\n🔍 真实验证（pytest 实测）：❌ 未通过"
