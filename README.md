@@ -5,6 +5,7 @@
 
 [![CI](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/ci.yml)
 [![Deploy demo](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml/badge.svg)](https://github.com/ShadowQuill/synergyos/actions/workflows/pages.yml)
+[![在线演示](https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E6%BC%94%E7%A4%BA-Live-00b4d8?logo=githubpages&logoColor=white)](https://shadowquill.github.io/synergyos/)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org)
 
 📑 文档导航：[Menu](./menu.md)
