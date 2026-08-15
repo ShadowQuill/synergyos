@@ -75,19 +75,19 @@ def fnt(path, size, index=0):
     return ImageFont.truetype(path, size, index=index)
 
 zh, en = fnt(ZH, 96, 1), fnt(EN_TITLE, 88)
-zh_sub, mono = fnt(ZH, 38, 1), fnt(MONO, 24)
+zh_sub, mono = fnt(ZH, 36, 1), fnt(MONO, 22)
 
-draw.text((94, 118), "SYNERGYOS", font=mono, fill=(132, 182, 212, 185), anchor="ls")
-draw.text((94, 148), "灵犀  自进化协作智能体", font=zh_sub, fill=(150, 190, 216, 185), anchor="ls")
+draw.text((94, 104), "SYNERGYOS", font=mono, fill=(132, 182, 212, 185), anchor="ls")
+draw.text((94, 162), "灵犀  自进化协作智能体", font=zh_sub, fill=(150, 190, 216, 185), anchor="ls")
 
-draw.text((92, 250), "灵犀", font=zh, fill=(242, 249, 255, 255), anchor="ls")
+draw.text((92, 286), "灵犀", font=zh, fill=(242, 249, 255, 255), anchor="ls")
 lw = draw.textlength("灵犀", font=zh)
-add_glow(92 + int(lw / 2), 250, 120, (255, 255, 255), 28)
-draw.text((92, 250), "灵犀", font=zh, fill=(242, 249, 255, 255), anchor="ls")
-draw.text((92 + lw + 18, 258), "SynergyOS", font=en, fill=(122, 226, 240, 255), anchor="ls")
+add_glow(92 + int(lw / 2), 286, 120, (255, 255, 255), 28)
+draw.text((92, 286), "灵犀", font=zh, fill=(242, 249, 255, 255), anchor="ls")
+draw.text((92 + lw + 18, 294), "SynergyOS", font=en, fill=(122, 226, 240, 255), anchor="ls")
 
-draw.text((94, 374), "以用户为中心的多角色 AI 智能体网络", font=zh_sub, fill=(202, 221, 236, 235), anchor="ls")
-draw.text((94, 432), "DUAL-BRAIN  ·  REFLEXION SELF-HEAL  ·  HONEST OMISSION", font=mono, fill=(120, 200, 220, 210), anchor="ls")
+draw.text((94, 408), "以用户为中心的多角色 AI 智能体网络", font=zh_sub, fill=(202, 221, 236, 235), anchor="ls")
+draw.text((94, 466), "DUAL-BRAIN  ·  REFLEXION SELF-HEAL  ·  HONEST OMISSION", font=mono, fill=(120, 200, 220, 210), anchor="ls")
 
 x = 94
 for lb in ["# multi-agent", "# reflexion", "# verification", "# zero-dependency"]:
