@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "synergyos"
-version = "1.0.0"
+version = "1.2.0"
 description = "灵犀 · 自进化协作智能体 SynergyOS：以用户为中心的多角色 AI 智能体网络"
 readme = "README.md"
 requires-python = ">=3.9"

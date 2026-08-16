@@ -14,12 +14,14 @@ import json
 import os
 import sys
 
-from . import SynergyOS, BUS, EventType
+from . import SynergyOS, BUS, EventType, __version__
 from .core.profile import COLD_START_QUESTIONS
-from .core.engine import ENGINE
+from .core.engine import ENGINE, build_engine
 from .core.report import generate
 from .core.scenarios import SCENARIOS, VALID_SCENARIOS
 from .core.verify import _module_for
+from .agents.tools import make_builtin_tools
+from .core.memory import SemanticMemory
 
 
 COLORS = {
@@ -180,11 +182,28 @@ def main(argv=None):
                    help="指定画像存储路径，默认 ~/.synergyos/profile.json")
     p.add_argument("--emit", metavar="DIR", nargs="?", const="out", default=None,
                    help="将架构/代码/用例落盘为文件（默认 out/，可指定目录）；真模型下产出真实可运行文件")
+    p.add_argument("--provider", default=None,
+                   choices=["deepseek", "qwen", "glm", "openai"],
+                   help="指定真实大模型引擎（deepseek/qwen/glm/openai）；不填则按环境变量自动选择，"
+                        "均无 Key 时回退 Mock")
+    p.add_argument("--workspace", default="workspace",
+                   help="工具沙箱根目录（程序员智能体的文件读写限定在此目录内，默认 workspace/）")
+    p.add_argument("--online", action="store_true",
+                   help="开启真实联网搜索（默认离线模拟；也可置环境变量 SYNERGYOS_ONLINE=1）")
+    p.add_argument("--learning-dir", default=None,
+                   help="软学习目录：开启经验库 + 失败模式库 + 反思权重跨会话持久化（越用越聪明）")
+    p.add_argument("--memory-file", default=None,
+                   help="语义记忆层知识库 JSON 路径（每行/每对象一段领域知识），不填则不启用检索回填")
     args = p.parse_args(argv)
 
     print("=" * 64)
-    print("  灵犀 · 自进化协作智能体  SynergyOS  v0.1.0")
-    print("  引擎:", "真实模型" if ENGINE.is_real() else "Mock 离线引擎（无需 API Key）")
+    print(f"  灵犀 · 自进化协作智能体  SynergyOS  v{__version__}")
+    engine = build_engine(args.provider)
+    print("  引擎:", ("真实模型 " + (args.provider or "auto")) if engine.is_real()
+          else "Mock 离线引擎（无需 API Key）")
+    print("  工具:", "已启用（沙箱 " + args.workspace + ("，真实联网" if args.online else "，离线模拟") + "）")
+    if args.learning_dir:
+        print("  软学习:", f"已开启（经验库持久化于 {args.learning_dir}）")
     if args.scenario:
         print("  应用场景:", SCENARIOS[args.scenario].title)
     print("=" * 64)
@@ -203,7 +222,18 @@ def main(argv=None):
             print(f"已加载历史画像：{profile_path}")
         else:
             print(f"首次运行，画像将保存至：{profile_path}")
-    os_sys = SynergyOS(profile_path=profile_path)
+
+    # 工具层：沙箱 + 可开关联网
+    tools = make_builtin_tools(workspace=args.workspace, online=args.online)
+    # 语义记忆层：可选知识库回填
+    memory = None
+    if args.memory_file and os.path.exists(args.memory_file):
+        memory = SemanticMemory.load(args.memory_file)
+        print(f"  语义记忆层：已加载 {len(memory.docs)} 条知识（{args.memory_file}）")
+
+    os_sys = SynergyOS(engine=engine, profile_path=profile_path,
+                       tools=tools, memory=memory,
+                       learning_dir=args.learning_dir)
     if args.pause is not None:
         # 进度到阈值即请求暂停
         os_sys.pause.set_progress_source(lambda: os_sys.pause._progress)

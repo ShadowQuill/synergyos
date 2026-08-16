@@ -1,8 +1,22 @@
 """模型引擎抽象层。
 
 默认使用 MockEngine，无需任何 API Key 即可跑通全链路；当检测到
-环境变量（OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL）时，
-自动切换到 OpenAI 兼容的真实大模型。调用方代码无需任何改动。
+对应的 API Key 时，自动切换到真实大模型。灵犀采用 **OpenAI 兼容协议**，
+因此 DeepSeek / 通义千问(qwen) / 智谱 GLM / OpenAI 均可直接接入——
+契合报告「国产模型自主可控」的叙事。
+
+环境变量（也可放在项目根 / 运行目录的 .env）：
+  · DEEPSEEK_API_KEY    → deepseek-chat   (https://api.deepseek.com)
+  · DASHSCOPE_API_KEY   → qwen-plus       (阿里云百炼兼容端点)
+  · ZHIPU_API_KEY       → glm-4-plus      (智谱开放平台)
+  · OPENAI_API_KEY      → gpt-4o-mini     (OpenAI)
+  · SYNERGYOS_FORCE_MOCK=1  → 强制 Mock（CI / 单测零 token）
+  · SYNERGYOS_PROVIDER=<deepseek|qwen|glm|openai>  → 显式指定引擎
+  · SYNERGYOS_BASE_URL / SYNERGYOS_MODEL  → 覆盖端点与模型名（任意 provider）
+    另：provider=openai 时也尊重 OPENAI_BASE_URL / OPENAI_MODEL，
+    因此把国产模型配在 OPENAI_* 变量里（兼容协议常见做法）同样可用。
+
+调用方代码无需任何改动：build_engine() 自动择优选型。
 """
 from __future__ import annotations
 
@@ -12,13 +26,34 @@ import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
 from .scenarios import mock_architect, mock_programmer, mock_tester
 
 
+# ---- 多国产引擎预设（均走 OpenAI 兼容协议）----
+PROVIDERS: Dict[str, Dict[str, str]] = {
+    "deepseek": {"model": "deepseek-chat",
+                 "base_url": "https://api.deepseek.com"},
+    "qwen":     {"model": "qwen-plus",
+                 "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1"},
+    "glm":      {"model": "glm-4-plus",
+                 "base_url": "https://open.bigmodel.cn/api/paas/v4"},
+    "openai":   {"model": "gpt-4o-mini",
+                 "base_url": "https://api.openai.com/v1"},
+}
+# 各引擎对应的 API Key 环境变量名
+PROVIDER_ENV: Dict[str, str] = {
+    "deepseek": "DEEPSEEK_API_KEY",
+    "qwen":     "DASHSCOPE_API_KEY",
+    "glm":      "ZHIPU_API_KEY",
+    "openai":   "OPENAI_API_KEY",
+}
+
+
 def _load_dotenv() -> None:
-    """零依赖读取 .env（OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL 等）。
+    """零依赖读取 .env（DEEPSEEK_API_KEY / DASHSCOPE_API_KEY / ZHIPU_API_KEY /
+    OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL 等）。
 
     仅在不覆盖已有环境变量的前提下写入 os.environ；优先顺序：
     ① 已 export 的环境变量 ② 运行目录 .env ③ 项目根目录 .env。
@@ -75,6 +110,13 @@ class MockEngine(BaseEngine):
     def complete(self, system: str, user: str, *, role: str = "assistant",
                  temperature: float | None = None, scenario: Optional[str] = None,
                  **kwargs) -> str:
+        # 工具调用演示（仅当调用方显式 allow_tools 且为程序员角色）：
+        # 离线 Mock 返回一个 web_search 工具调用，供 ToolExecutor 走通
+        # 「智能体调工具」闭环；不影响任何默认（不带 allow_tools）的路由。
+        if kwargs.get("allow_tools") and role == "programmer":
+            q = _extract_task(user)
+            return ('<tool_call>{"name": "web_search", "arguments": {"query": '
+                    + json.dumps(q, ensure_ascii=False) + '}}</tool_call>')
         # 场景化：左脑三类角色按场景生成贴合领域的内容（role 优先）
         if scenario:
             if role == "architect":
@@ -240,20 +282,67 @@ def _clean_task(task: str) -> str:
     return task.strip()
 
 
-def build_engine() -> BaseEngine:
-    """按环境变量自动选择引擎。"""
+def create_engine(provider: str, *, api_key: Optional[str] = None,
+                  model: Optional[str] = None,
+                  base_url: Optional[str] = None) -> BaseEngine:
+    """按预设构造一个 OpenAI 兼容的真实引擎。
+
+    provider ∈ {deepseek, qwen, glm, openai}。api_key / model / base_url 缺省时
+    取预设默认值（model/base_url）与对应环境变量（api_key）。
+    """
+    preset = PROVIDERS.get(provider)
+    if preset is None:
+        raise ValueError(f"未知引擎 provider：{provider}，可选 {list(PROVIDERS)}")
+    api_key = api_key or os.getenv(PROVIDER_ENV[provider])
+    if not api_key:
+        raise RuntimeError(
+            f"未检测到 {PROVIDER_ENV[provider]}；请配置该环境变量，"
+            f"或移除以使用 Mock 引擎。")
+    # 端点/模型可被环境变量覆盖：
+    #   · 通用：SYNERGYOS_BASE_URL / SYNERGYOS_MODEL（对任意 provider 生效）
+    #   · openai：额外尊重 OPENAI_BASE_URL / OPENAI_MODEL —— OpenAI 兼容生态的
+    #     通行约定，很多用户把国产模型（如 DeepSeek）直接配在 OPENAI_* 变量里，
+    #     若忽略这两个变量就会拿着别家的 Key 去打 api.openai.com。
+    env_base = os.getenv("SYNERGYOS_BASE_URL")
+    env_model = os.getenv("SYNERGYOS_MODEL")
+    if provider == "openai":
+        env_base = env_base or os.getenv("OPENAI_BASE_URL")
+        env_model = env_model or os.getenv("OPENAI_MODEL")
+    return OpenAIEngine(EngineConfig(
+        provider=provider,
+        model=model or env_model or preset["model"],
+        base_url=base_url or env_base or preset["base_url"],
+        api_key=api_key,
+    ))
+
+
+def available_provider() -> Optional[str]:
+    """返回当前环境中已配置 Key 的第一个可用引擎（优先 deepseek）。"""
     _load_dotenv()
-    # 测试/CI 可通过此开关强制走 Mock，避免误打真实 API。
+    for p in ("deepseek", "qwen", "glm", "openai"):
+        if os.getenv(PROVIDER_ENV[p]):
+            return p
+    return None
+
+
+def build_engine(provider: Optional[str] = None) -> BaseEngine:
+    """按环境变量自动选择引擎。
+
+    优先级：① SYNERGYOS_FORCE_MOCK 强制 Mock；② 显式 SYNERGYOS_PROVIDER；
+    ③ 已配置 Key 的引擎（优先 deepseek，贴「国产自主可控」叙事）；
+    ④ 都没有则 Mock。
+    """
+    _load_dotenv()
+    # 测试/CI 可通过此开关强制走 Mock，避免误打真实 API（零 token）。
     if os.getenv("SYNERGYOS_FORCE_MOCK"):
         return MockEngine()
-    api_key = os.getenv("OPENAI_API_KEY")
-    if api_key:
-        return OpenAIEngine(EngineConfig(
-            provider="openai",
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-            base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            api_key=api_key,
-        ))
+    provider = provider or os.getenv("SYNERGYOS_PROVIDER") or available_provider()
+    if provider:
+        try:
+            return create_engine(provider)
+        except RuntimeError:
+            # Key 缺失等：优雅降级到 Mock，保证链路仍可跑
+            return MockEngine()
     return MockEngine()
 
 

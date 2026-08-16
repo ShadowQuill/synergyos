@@ -12,8 +12,14 @@ from .core.brain import LeftBrain, RightBrain, arbitrate, LeftArtifacts, Observa
 from .core.reflexion import ReflexionLoop, ReflexionResult
 from .core.pause import PauseController, PauseHorizon
 from .core.orchestrator import SynergyOS
+from .core.memory import SemanticMemory
+from .core.learning import ExperienceStore, FailureLibrary, Experience, WeightStore
+from .agents import (
+    ArchitectAgent, ProgrammerAgent, TesterAgent, ObserverAgent, Arbitrator,
+    Tool, ToolRegistry, ToolExecutor, make_builtin_tools,
+)
 
-__version__ = "0.1.0"
+__version__ = "1.2.0"
 __all__ = [
     "ENGINE", "BaseEngine", "MockEngine", "OpenAIEngine", "build_engine",
     "BUS", "EventBus", "EventType", "Event",
@@ -21,5 +27,9 @@ __all__ = [
     "LeftBrain", "RightBrain", "arbitrate", "LeftArtifacts", "Observation",
     "ReflexionLoop", "ReflexionResult",
     "PauseController", "PauseHorizon",
-    "SynergyOS",
+    "SynergyOS", "SemanticMemory",
+    "ExperienceStore", "FailureLibrary", "Experience", "WeightStore",
+    "ArchitectAgent", "ProgrammerAgent", "TesterAgent",
+    "ObserverAgent", "Arbitrator",
+    "Tool", "ToolRegistry", "ToolExecutor", "make_builtin_tools",
 ]

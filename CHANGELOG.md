@@ -10,6 +10,38 @@
 
 ---
 
+## [v1.2.0] — 2026-08-16
+
+> 主题：**真能干活 · 多国产引擎 · 软学习闭环 · 量化评测**（改进报告 P0 三项 + 诚实说明 + P1#4/#5/#6）
+> 对应 `改进方向_灵犀SynergyOS_2026-08-16.html`。
+
+### Added（新增）
+- **真能干活（真实引擎）**：`engine.py` 升级为「真实大模型即开即用」——内置 deepseek / 通义千问(qwen) / 智谱 GLM(glm) / OpenAI 四套预设，`build_engine()` 按 `SYNERGYOS_PROVIDER` 或已配置 Key 自动择优选型（优先 deepseek），均无 Key 时优雅降级 Mock。零改代码接入真实大脑。
+- **工具真实化（默认离线、可选联网）**：`agents/tools/builtins.py` 的文件读写**真实副作用**，加 `--workspace` 沙箱（默认 `workspace/` 内、禁删、越界拒绝）；`web_search` 默认离线模拟，置 `--online` 或 `SYNERGYOS_ONLINE=1` 时走标准库 `urllib` 真搜。程序员智能体可真读写工作区。
+- **软学习闭环（P1#4，零依赖、可离线）**：`core/learning.py` 实现「越用越聪明」——每次任务记一条经验（成败/失败类型/用过的工具/反馈），失败经历聚合成**失败模式库**，相似历史作为 **few-shot 注入**回灌智能体；反思权重与经验库**跨会话持久化**（重启仍在）。
+- **量化评测基准（P1#5）**：`eval/`（cases + runner）内置跨场景评测集，量化「必备要素完整率 / 满意度 / 经验召回率」，让自进化收益可被数字度量。
+- 多国产引擎对比（P1#6）即上方引擎预设；CLI / README / EVIDENCE 同步。
+- README 新增「两种记忆」「智能体调工具」「自进化 vs 真学习（诚实说明）」「软学习闭环」「量化评测」「多引擎接入」等节；`examples/99-tools/` 提供离线可跑演示。
+
+### Changed（变更）
+- `synergyos/__init__.py`：导出 `SemanticMemory`、四个 Agent 类、工具接口、`ExperienceStore`/`FailureLibrary`/`WeightStore` 软学习类。
+- `MockEngine`：新增 opt-in 的 `allow_tools` 分支，离线触发 `<tool_call>` 以走通工具闭环。
+- `ReflexionLoop`：权重**支持持久化**（默认不写，开启 learning 时落盘）。
+- 多智能体（`architect`/`programmer`/`tester`）支持 `experience` few-shot 注入参数。
+
+### Fixed（修复）
+- **真实引擎端点被忽略**：`create_engine()` 此前只认预设 `base_url`，导致「把国产模型配在 `OPENAI_*` 变量」的常见用法会拿着 DeepSeek 的 Key 去打 `api.openai.com` 并超时。现支持 `SYNERGYOS_BASE_URL` / `SYNERGYOS_MODEL`（任意 provider）与 `OPENAI_BASE_URL` / `OPENAI_MODEL`（openai provider），且不会串味到其他 provider 的预设。
+- **验证/自愈误用模块级引擎**：`orchestrator` 判断是否走「pytest 实测 + 反思自愈」时错用了模块级 `ENGINE` 而非实例引擎，显式传入 Mock 的实例仍会触发真实调用。改为一律以 `self.engine` 为准；`report.py` 的「引擎」字段同样改为按实际运行实例显示。
+- **评测基准会误打真实 API**：`run_eval()` 默认引擎改为 `MockEngine()`（不再取模块级 `ENGINE`），基准从此与本机 `.env` 无关，恒定离线秒级；需要真实模型对比时用 `python3 -m synergyos.eval --real`。
+
+### Verified（验证）
+- 单测扩展至 **93 项**全绿（零 token），新增覆盖：工具沙箱越界拒绝 / 离线搜索桩 / 软学习经验库 / 失败模式库 / 权重持久化 / 量化评测运行器 / 引擎端点环境变量覆盖 / 验证只跟随实例引擎。
+- **真实 DeepSeek 端到端跑通**：`--scenario dev` 全链路 39s 出交付物（plan + solution.py + tests.py + README），pytest 实测 **27/32 通过**——其余 5 条是模型自生成用例与实现规格自相矛盾（要求非 list 入参抛 `TypeError`），系统按设计如实标注「❌ 需人工复核」而非盲信模型。
+- 量化评测（离线、Mock）：必备要素完整率 **85.7%**、满意度均值 **0.84**、经验召回率 **100%**，7 用例 0.07s 完成。
+- `examples/99-tools/` 两个脚本离线跑通（工具闭环 + 记忆检索 + 软学习回灌）。
+
+---
+
 ## [v0.1.1] — 2026-08-15
 
 > 主题：**要素优先级规则 · 场景库扩展 · 验收健壮性增强 · 仓库规范化**
@@ -67,3 +99,4 @@
 |------|-------|-------|---------|-----------|
 | v0.1.0 | 3 (paas/biz/dev) | ~40 | 否 | 否 |
 | v0.1.1 | 5 (+code-review/data-analysis) | 55 | 是（Pages） | 是 |
+| v1.2.0 | 5 | 93（+agents/tools/memory/learning/eval/引擎端点） | 是（Pages） | 是 |

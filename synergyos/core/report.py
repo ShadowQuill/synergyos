@@ -57,7 +57,9 @@ def build(os_sys, result: Dict) -> Dict:
 
     return {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "engine": "真实模型" if ENGINE.is_real() else "Mock 离线引擎（无需 API Key）",
+        # 以实际运行该任务的引擎为准（实例引擎优先于模块级默认）
+        "engine": ("真实模型" if getattr(os_sys, "engine", ENGINE).is_real()
+                   else "Mock 离线引擎（无需 API Key）"),
         "task": result.get("task", ""),
         "scenario": result.get("scenario"),
         "paused": result.get("paused", False),

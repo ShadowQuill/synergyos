@@ -4,6 +4,10 @@
 """
 from __future__ import annotations
 
+import ast
+import os
+import re
+import time
 from typing import Dict, List, Optional
 
 from .engine import ENGINE, BaseEngine
@@ -13,15 +17,27 @@ from .brain import LeftBrain, RightBrain, arbitrate
 from .reflexion import ReflexionLoop
 from .pause import PauseController
 from .scenarios import get_scenario
+from .memory import SemanticMemory
+from .learning import ExperienceStore, FailureLibrary, Experience
 
 
 class SynergyOS:
-    def __init__(self, engine: BaseEngine = ENGINE, bus=BUS, profile_path: Optional[str] = None):
+    def __init__(self, engine: BaseEngine = ENGINE, bus=BUS, profile_path: Optional[str] = None,
+                 tools=None, memory: Optional[SemanticMemory] = None,
+                 learning_dir: Optional[str] = None):
         self.engine = engine
         self.bus = bus
-        self.left = LeftBrain(engine)
-        self.right = RightBrain(engine)
-        self.reflex = ReflexionLoop(engine)
+        self.tools = tools
+        self.memory = memory
+        self.learning_dir = learning_dir
+        # 软学习闭环：经验库（learning_dir 下持久化）；未指定则仅内存、不触发学习。
+        self.experience_store = ExperienceStore(
+            os.path.join(learning_dir, "experiences.json") if learning_dir else None)
+        self.left = LeftBrain(engine, bus=bus, tools=tools)
+        self.right = RightBrain(engine, bus=bus)
+        # 反思权重跨会话持久化（软学习「越用越聪明」的核心）
+        self.reflex = ReflexionLoop(
+            engine, weights_path=os.path.join(learning_dir, "weights.json") if learning_dir else None)
         self.pause = PauseController()
         self.profiler = Profiler(path=profile_path)
         # 累积每轮协作明细，供报告生成器取数
@@ -60,6 +76,11 @@ class SynergyOS:
 
         profile = self.profiler.profile
         style_hint = f"请贴合用户审美偏好：{profile.aesthetic}。"
+        memory_hint = self.memory.context(task) if self.memory else ""
+        # 软学习：检索相似历史，生成 few-shot 经验注入（失败模式库 / 相似成功案例）
+        experience_hint = ""
+        if self.learning_dir:
+            experience_hint = FailureLibrary.build_fewshot(self.experience_store, task)
 
         # 2-4. 协作 + 仲裁 + 反思（可能多轮）
         best = None
@@ -71,7 +92,9 @@ class SynergyOS:
                              f"应用场景：{scenario_meta.title}")
         for rnd in range(self.reflex.max_rounds):
             self.bus.publish(EventType.INFO, "orchestrator", f"—— 第 {rnd + 1} 轮协作 ——")
-            artifacts = self.left.execute(task, profile, style_hint, scenario=scenario)
+            artifacts = self.left.execute(task, profile, style_hint, scenario=scenario,
+                                          memory_hint=memory_hint,
+                                          experience=experience_hint)
             obs = self.right.observe(task, artifacts, profile)
             arb = arbitrate(artifacts, obs)
             last_obs = obs
@@ -116,11 +139,11 @@ class SynergyOS:
         #   dev：把 solution+tests 真跑 pytest，失败自动修复实现；
         #   paas/biz：结构化验收（plan 合法性 + 交付物必备要素），缺失自动补全。
         verification = None
-        if ENGINE.is_real() and best and best.code.strip():
+        if self.engine.is_real() and best and best.code.strip():
             from .verify import verify_and_fix
             verification = verify_and_fix(
                 {"plan": best.plan, "code": best.code, "tests": best.tests, "task": task},
-                ENGINE, scenario=scenario, max_fix=3,
+                self.engine, scenario=scenario, max_fix=3,
             )
             if verification.get("fixed_code"):
                 best.code = verification["fixed_code"]
@@ -139,6 +162,23 @@ class SynergyOS:
 
         self.bus.publish(EventType.DELIVER, "orchestrator", "灵犀交付最终结果",
                          satisfaction=last_obs.satisfaction if last_obs else None)
+
+        # 软学习：记录本次任务经验（成败 / 失败类型 / 用过的工具 / 反馈），
+        # 写入经验库供后续相似任务检索回灌；未启用 learning_dir 则不记录。
+        if self.learning_dir and best is not None:
+            last_verdict = self.rounds[-1]["reflex"].verdict if self.rounds else "pass"
+            success = last_verdict == "pass"
+            failure_type = None if success else last_verdict
+            tools_used = self._collect_tools_used()
+            feedback = (last_obs.note if last_obs else "") or ""
+            self.experience_store.record(Experience(
+                ts=time.time(), task=task,
+                scenario=scenario or "", success=success,
+                failure_type=failure_type, tools_used=tools_used,
+                feedback=feedback,
+                notes=(f"满意度={last_obs.satisfaction:.2f}" if last_obs else ""),
+            ))
+
         return {
             "task": task,
             "scenario": scenario_meta.title if scenario_meta else None,
@@ -158,6 +198,25 @@ class SynergyOS:
         if self.pause.tick(stage):
             return True
         return False
+
+    def _collect_tools_used(self) -> List[str]:
+        """从事件总线收集本次运行里程序员实际调用过的工具名。"""
+        names: List[str] = []
+        pat = re.compile(r"\[(.*?)\]")
+        for e in self.bus.history():
+            if e.source == "programmer" and "调用工具" in e.message:
+                m = pat.search(e.message)
+                if m:
+                    inner = m.group(1).strip()
+                    if inner:
+                        try:
+                            parsed = ast.literal_eval("[" + inner + "]")
+                            names.extend(str(x) for x in parsed)
+                        except Exception:
+                            names.append(inner)
+        # 去重保序
+        seen = set()
+        return [n for n in names if not (n in seen or seen.add(n))]
 
     def _paused_result(self, task, artifacts=None, obs=None) -> Dict:
         return {

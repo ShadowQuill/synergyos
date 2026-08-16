@@ -20,6 +20,19 @@ out_*/
 .synergyos/
 *.synergyos.json
 
+# 软学习闭环（经验库 / 失败模式库 / 权重，运行期生成，含个人经验，勿入库）
+.synergyos_learn/
+*.synergyos_learn/
+experiences.json
+weights.json
+
+# 量化评测缓存
+.eval_cache/
+
+# 工具沙箱工作区（程序员真实文件读写的落点，运行期生成）
+workspace/
+sandbox/
+
 # 虚拟环境
 .venv/
 venv/

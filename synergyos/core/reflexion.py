@@ -6,11 +6,13 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from .engine import ENGINE, BaseEngine
 from .bus import BUS, EventType
+from .learning import WeightStore
 
 
 @dataclass
@@ -24,14 +26,16 @@ class ReflexionResult:
 
 
 class ReflexionLoop:
-    def __init__(self, engine: BaseEngine = ENGINE, max_rounds: int = 3):
+    def __init__(self, engine: BaseEngine = ENGINE, max_rounds: int = 3,
+                 weights_path: Optional[str] = None):
         self.engine = engine
         self.max_rounds = max_rounds
-        # 各左脑智能体权重（软修复时动态调整）
-        self.weights: Dict[str, float] = {
-            "architect": 1.0, "programmer": 1.0, "tester": 1.0,
-            "observer": 1.0,
-        }
+        self.weights_path = weights_path
+        # 各左脑智能体权重（软修复时动态调整）；可从磁盘加载实现跨会话累积。
+        if weights_path and os.path.exists(weights_path):
+            self.weights = WeightStore.load(weights_path)
+        else:
+            self.weights = dict(WeightStore.DEFAULT_WEIGHTS)
 
     def evaluate(self, task: str, artifacts_trace: List[str],
                  observation) -> ReflexionResult:
@@ -88,4 +92,7 @@ class ReflexionLoop:
         if delta:
             BUS.publish(EventType.WEIGHT, "reflexion",
                         f"软修复调权：{delta}", weights=dict(self.weights))
+            # 软学习：权重跨会话持久化，重启后保留 → 真正「越用越聪明」
+            if self.weights_path:
+                WeightStore.save(self.weights_path, dict(self.weights))
         return dict(self.weights)
